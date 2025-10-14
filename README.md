@@ -2,6 +2,8 @@
 
 Advanced ERC-20 token implementation with comprehensive features built using Foundry and OpenZeppelin Contracts.
 
+**This token is upgradeable** using the UUPS (Universal Upgradeable Proxy Standard) proxy pattern, allowing you to upgrade the token's logic without changing its address or losing any state.
+
 ## Features
 
 - **ERC20 Standard**: Full ERC-20 compliance
@@ -12,6 +14,7 @@ Advanced ERC-20 token implementation with comprehensive features built using Fou
 - **Checkpoints**: Built-in historical balance tracking via ERC20Votes
 - **Ownable**: Owner-based access control
 - **Permit (ERC-2612)**: Gasless approvals via off-chain signatures
+- **Upgradeable**: UUPS proxy pattern for upgrading logic without losing state
 
 ## Token Details
 
@@ -65,7 +68,7 @@ forge test
 forge test -vv
 
 # Run specific test contract
-forge test --match-contract ACTTest
+forge test --match-contract ACTTest -vv
 
 # Run with gas reporting
 forge test --gas-report
@@ -94,11 +97,11 @@ forge build
 anvil
 
 # Terminal 2: Deploy with default parameters
-forge script script/ACT.s.sol --rpc-url anvil --broadcast
+forge script script/Deploy.s.sol --rpc-url anvil --broadcast
 
 # Deploy with custom token parameters
 TOKEN_NAME="My Token" TOKEN_SYMBOL="MTK" INITIAL_SUPPLY=5000000 \
-  forge script script/ACT.s.sol --rpc-url anvil --broadcast
+  forge script script/Deploy.s.sol --rpc-url anvil --broadcast
 ```
 
 ### Testnet Deployment (Sepolia)
@@ -108,7 +111,7 @@ TOKEN_NAME="My Token" TOKEN_SYMBOL="MTK" INITIAL_SUPPLY=5000000 \
 source .env
 
 # Deploy with default parameters (ACT Token, ACT, 1000000)
-forge script script/ACT.s.sol \
+forge script script/Deploy.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --mnemonics "$MNEMONIC" \
@@ -116,7 +119,7 @@ forge script script/ACT.s.sol \
 
 # Deploy with custom token parameters
 TOKEN_NAME="My Custom Token" TOKEN_SYMBOL="MCT" INITIAL_SUPPLY=5000000 \
-  forge script script/ACT.s.sol \
+  forge script script/Deploy.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --mnemonics "$MNEMONIC" \
@@ -128,7 +131,7 @@ TOKEN_NAME="My Custom Token" TOKEN_SYMBOL="MCT" INITIAL_SUPPLY=5000000 \
 source .env
 
 # Deploy and verify with default parameters
-forge script script/ACT.s.sol \
+forge script script/Deploy.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --verify \
@@ -137,7 +140,7 @@ forge script script/ACT.s.sol \
 
 # Deploy and verify with custom parameters
 TOKEN_NAME="My Token" TOKEN_SYMBOL="MTK" INITIAL_SUPPLY=5000000 \
-  forge script script/ACT.s.sol \
+  forge script script/Deploy.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --verify \
@@ -152,7 +155,7 @@ TOKEN_NAME="My Token" TOKEN_SYMBOL="MTK" INITIAL_SUPPLY=5000000 \
 source .env
 
 # Deploy with default parameters
-forge script script/ACT.s.sol \
+forge script script/Deploy.s.sol \
   --rpc-url fuji \
   --broadcast \
   --mnemonics "$MNEMONIC" \
@@ -160,7 +163,7 @@ forge script script/ACT.s.sol \
 
 # Deploy with custom token parameters
 TOKEN_NAME="My Token" TOKEN_SYMBOL="MTK" INITIAL_SUPPLY=5000000 \
-  forge script script/ACT.s.sol \
+  forge script script/Deploy.s.sol \
   --rpc-url fuji \
   --broadcast \
   --mnemonics "$MNEMONIC" \
@@ -172,7 +175,7 @@ TOKEN_NAME="My Token" TOKEN_SYMBOL="MTK" INITIAL_SUPPLY=5000000 \
 source .env
 
 # Deploy and verify with default parameters
-forge script script/ACT.s.sol \
+forge script script/Deploy.s.sol \
   --rpc-url fuji \
   --broadcast \
   --verify \
@@ -183,7 +186,7 @@ forge script script/ACT.s.sol \
 
 # Deploy and verify with custom parameters
 TOKEN_NAME="My Token" TOKEN_SYMBOL="MTK" INITIAL_SUPPLY=5000000 \
-  forge script script/ACT.s.sol \
+  forge script script/Deploy.s.sol \
   --rpc-url fuji \
   --broadcast \
   --verify \
@@ -194,6 +197,12 @@ TOKEN_NAME="My Token" TOKEN_SYMBOL="MTK" INITIAL_SUPPLY=5000000 \
 ```
 
 **Note**: For Avalanche Fuji, you need testnet AVAX. Get it from the [Avalanche Faucet](https://faucet.avax.network/).
+
+**IMPORTANT**: The deployment outputs TWO addresses:
+1. **Proxy Address** - This is the address users interact with (SAVE THIS!)
+2. **Implementation Address** - Internal, users don't need this
+
+Always use the **Proxy Address** for all interactions!
 
 #### Quick Reference
 
@@ -450,6 +459,97 @@ cast --to-wei 1000
 cast --from-wei 1000000000000000000000
 ```
 
+## Upgrading the Token
+
+The ACT token uses the UUPS (Universal Upgradeable Proxy Standard) proxy pattern, which provides the following benefits:
+
+- ✅ Fix bugs without redeployment
+- ✅ Add new features while preserving state
+- ✅ Token address never changes
+- ✅ Gas-efficient (UUPS pattern)
+- ✅ Owner-controlled upgrades only
+
+### How to Upgrade
+
+When you want to upgrade the token logic:
+
+```bash
+source .env
+
+# Set the proxy address (the address from initial deployment)
+export PROXY_ADDRESS=0xYourProxyAddressHere
+
+# Run the upgrade script
+forge script script/Upgrade.s.sol \
+  --rpc-url sepolia \
+  --broadcast \
+  --mnemonic "$MNEMONIC" \
+  --mnemonic-index 0
+```
+
+**What happens during upgrade:**
+1. New implementation contract is deployed
+2. Proxy is updated to point to new implementation
+3. All state (balances, ownership, etc.) is preserved
+4. Users continue using the same proxy address
+5. New logic/features become available immediately
+
+### Testing Upgrades
+
+```bash
+# Run all tests including upgrade scenarios
+forge test --match-contract ACTTest -vv
+
+# Run specific upgrade test
+forge test --match-test test_UpgradeToNewImplementation -vvv
+```
+
+### Important Upgrade Safety Rules
+
+⚠️ **CRITICAL**: When creating new versions for upgrades, you MUST:
+
+1. **Never change the order of state variables**
+   ```solidity
+   // ❌ BAD - changing order breaks storage
+   contract V2 {
+       uint256 public newVar;      // Added BEFORE existing vars
+       uint256 public totalSupply; // Existing var
+   }
+
+   // ✅ GOOD - adding at the end
+   contract V2 {
+       uint256 public totalSupply; // Existing var (same position)
+       uint256 public newVar;      // Added AFTER
+   }
+   ```
+
+2. **Never change variable types**
+3. **Never remove existing variables**
+4. **Always add new variables at the end**
+5. **Use the `__gap` array for future flexibility**
+
+### Architecture Diagram
+
+```
+┌─────────────────┐
+│     Users       │
+└────────┬────────┘
+         │
+         │ Interact with Proxy Address
+         ↓
+┌─────────────────────────┐
+│   ERC1967Proxy          │  ← Address never changes
+│   (Proxy Contract)      │  ← Stores all state (balances, etc.)
+└────────┬────────────────┘
+         │
+         │ Delegates calls to
+         ↓
+┌─────────────────────────┐
+│   ACT                   │  ← Can be replaced via upgrade
+│   (Implementation)      │  ← Contains the logic
+└─────────────────────────┘
+```
+
 ## Contract Functions
 
 ### Standard ERC20
@@ -507,16 +607,20 @@ ERC20Votes has a safe supply limit of `type(uint208).max` (~4.1e62) to prevent c
 
 ```
 ├── src/
-│   └── ACT.sol             # ACT Token contract
+│   └── ACT.sol                     # Upgradeable ACT Token (UUPS)
 ├── script/
-│   └── ACT.s.sol           # Deployment script
+│   ├── Deploy.s.sol                # Deploy upgradeable token
+│   └── Upgrade.s.sol               # Upgrade existing proxy
 ├── test/
-│   ├── ACT.t.sol           # Comprehensive test suite
-│   └── ACTBasic.t.sol      # Basic test suite
-├── lib/                    # Dependencies
-├── foundry.toml            # Foundry configuration
-├── .env.example            # Example environment variables
-└── README.md               # This file
+│   ├── ACT.t.sol                   # Comprehensive tests including upgrade scenarios
+│   └── ACTBasic.t.sol              # Basic tests
+├── lib/                            # Dependencies
+│   ├── forge-std/                  # Foundry standard library
+│   ├── openzeppelin-contracts/    # OpenZeppelin contracts
+│   └── openzeppelin-contracts-upgradeable/  # OpenZeppelin upgradeable contracts
+├── foundry.toml                    # Foundry configuration
+├── .env.example                    # Example environment variables
+└── README.md                       # This file
 ```
 
 ## Resources

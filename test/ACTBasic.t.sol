@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {ACT} from "../src/ACT.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {console} from "forge-std/console.sol";
 
 /**
@@ -11,6 +12,8 @@ import {console} from "forge-std/console.sol";
  */
 contract ACTBasicTest is Test {
     ACT public token;
+    ACT public implementation;
+    ERC1967Proxy public proxy;
     address public deployer;
     address public user1;
     address public user2;
@@ -21,8 +24,22 @@ contract ACTBasicTest is Test {
         user1 = address(0x1);
         user2 = address(0x2);
 
-        // Deploy token with initial supply
-        token = new ACT("ACT Token", "ACT", initialSupply);
+        // Deploy implementation
+        implementation = new ACT();
+
+        // Encode initializer data
+        bytes memory initData = abi.encodeWithSelector(
+            ACT.initialize.selector,
+            "ACT Token",
+            "ACT",
+            initialSupply
+        );
+
+        // Deploy proxy
+        proxy = new ERC1967Proxy(address(implementation), initData);
+
+        // Wrap proxy with interface
+        token = ACT(address(proxy));
     }
 
     function test_InitialSupply() public {
