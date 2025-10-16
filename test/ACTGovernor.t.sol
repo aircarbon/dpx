@@ -6,6 +6,7 @@ import {ACT} from "../src/ACT.sol";
 import {ACTGovernor} from "../src/ACTGovernor.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 import {console} from "forge-std/console.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 // forge test --match-contract ACTGovernorTest -vv
 contract ACTGovernorTest is Test {
@@ -29,7 +30,22 @@ contract ACTGovernorTest is Test {
         voter2 = makeAddr("voter2");
         voter3 = makeAddr("voter3");
 
-        token = new ACT("ACT Token", "ACT", INITIAL_SUPPLY);
+        // Deploy implementation contract
+        ACT implementation = new ACT();
+
+        // Prepare initialization data
+        bytes memory initData = abi.encodeWithSelector(
+            ACT.initialize.selector,
+            "ACT Token",
+            "ACT",
+            INITIAL_SUPPLY
+        );
+
+        // Deploy proxy and initialize
+        ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
+
+        // Wrap proxy in ACT interface
+        token = ACT(address(proxy));
 
         governor = new ACTGovernor(
             token,
