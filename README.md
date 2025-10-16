@@ -366,8 +366,8 @@ cast send <TOKEN_ADDRESS> \
   0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb \
   1000000000000000000000 \
   --rpc-url sepolia \
-  --mnemonics "$MNEMONIC" \
-  --mnemonic-indexes 0
+  --mnemonic "$MNEMONIC" \
+  --mnemonic-index 0
 
 # Note: Amount is in wei (18 decimals)
 # 1000000000000000000000 = 1000 tokens
@@ -483,8 +483,8 @@ export PROXY_ADDRESS=0xYourProxyAddressHere
 forge script script/Upgrade.s.sol \
   --rpc-url sepolia \
   --broadcast \
-  --mnemonic "$MNEMONIC" \
-  --mnemonic-index 0
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-indexes 0
 ```
 
 **What happens during upgrade:**

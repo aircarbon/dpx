@@ -23,6 +23,10 @@ import {NoncesUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Nonce
  * - Permit: Supports gasless approvals via EIP-2612
  * - UUPS Upgradeable: Owner can upgrade the implementation
  *
+ * NOTE: ERC20Snapshot was removed in OpenZeppelin v5.x. ERC20Votes provides similar
+ * functionality through its checkpoint mechanism. You can query past votes using
+ * getPastVotes(account, blockNumber) and getPastTotalSupply(blockNumber).
+ *
  * IMPORTANT: This contract uses the UUPS (Universal Upgradeable Proxy Standard) pattern.
  * After deployment, you can upgrade the implementation by calling upgradeToAndCall()
  * (only the owner can perform upgrades).
