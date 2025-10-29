@@ -4,6 +4,18 @@ Advanced ERC-20 token implementation with comprehensive features built using Fou
 
 **This token is upgradeable** using the UUPS (Universal Upgradeable Proxy Standard) proxy pattern, allowing you to upgrade the token's logic without changing its address or losing any state.
 
+## Deployed Token Information
+
+A production token has been deployed with the following details:
+
+- **Token Name**: ACX RWA
+- **Token Symbol**: ACR
+- **Token Address**: `0xc0AcD13BD4E568aD96D758DEd3C7150f37e5B016`
+- **Total Supply**: 1,000,000,000 ACR (1 billion tokens)
+- **Treasury Safe Wallet**: `0x46917d5E1fA5D8A55d4FD4Bccf73498571FB1d60`
+
+The token is controlled by a multisig Treasury Safe wallet, which currently holds the entire supply of 1 billion tokens.
+
 ## Features
 
 - **ERC20 Standard**: Full ERC-20 compliance

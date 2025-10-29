@@ -17,6 +17,7 @@ sepolia = "${SEPOLIA_RPC_URL}"
 holesky = "${HOLESKY_RPC_URL}"
 fuji = "${FUJI_RPC_URL}"
 anvil = "${ANVIL_RPC_URL}"
+avalanche = "${AVALANCHE_RPC_URL}"
 
 # Etherscan API Key for contract verification
 [etherscan]
