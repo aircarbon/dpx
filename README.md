@@ -1,4 +1,4 @@
-# ACX Project - Smart Contracts Repository
+# DPX Project - Smart Contracts Repository
 
 This repository contains smart contracts for two main systems:
 
@@ -7,7 +7,7 @@ This repository contains smart contracts for two main systems:
 
 ## Production Deployments
 
-### ACR Governance Token (Ethereum Sepolia)
+### ACR Governance Token (Avalanche C-chain)
 
 - **Token Name**: ACX RWA
 - **Token Symbol**: ACR
@@ -17,6 +17,9 @@ This repository contains smart contracts for two main systems:
 - **Upgradeability**: UUPS proxy pattern
 
 The token is controlled by a multisig Treasury Safe wallet, which currently holds the entire supply of 1 billion tokens.
+
+### DPX Project
+Not deployed for now.
 
 ## Project Overview
 
@@ -130,19 +133,12 @@ forge build
 - `src/RedemptionVault.sol` - USDT redemption management
 
 ### Deployment Scripts
+
+#### ACR Governance Scripts
 - `script/Deploy.s.sol` - Deploy ACR token
 - `script/Upgrade.s.sol` - Upgrade ACR token implementation
 - `script/ACTGovernor.s.sol` - Deploy Governor contract
 
-## Contributing
-
-This project uses Foundry for development. Make sure to run tests before submitting changes:
-
-```bash
-forge test
-forge fmt --check
-```
-
-## License
-
-This project uses MIT license. See individual contract files for specific licensing information.
+#### DPX Platform Scripts
+- `script/DeployDPX.s.sol` - Deploy DPX platform (RegistryFactory)
+- `script/UpgradeDPX.s.sol` - Upgrade DPX platform (RegistryFactory)

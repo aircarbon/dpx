@@ -15,7 +15,7 @@ Complete documentation for the ACR governance token, Governor contract, and DAO 
 
 ## Overview
 
-The ACR system provides a complete on-chain governance solution built on Ethereum using Foundry and OpenZeppelin Contracts. It consists of two main smart contracts:
+The ACR system provides a complete on-chain governance solution built on Avalanche using Foundry and OpenZeppelin Contracts. It consists of two main smart contracts:
 
 1. **ACT Token (ACR in production)** - An upgradeable ERC-20 governance token with voting capabilities
 2. **ACTGovernor** - An OpenZeppelin Governor contract for DAO governance
@@ -72,7 +72,7 @@ These are configured via environment variables in `.env`:
 ```bash
 # In .env file
 VOTING_DELAY=1              # Voting starts 1 block after proposal
-VOTING_PERIOD=50400         # ~1 week on Ethereum (12s blocks)
+VOTING_PERIOD=50400         # ~1 week on Avalanche (12s blocks)
 PROPOSAL_THRESHOLD=0        # Anyone can propose
 QUORUM_PERCENTAGE=4         # 4% quorum
 ```
