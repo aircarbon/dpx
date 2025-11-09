@@ -8,7 +8,7 @@ Complete documentation for the DPX (Decentralized Project Exchange) platform sma
 - [Architecture Components](#architecture-components)
 - [Deployment Guide](#deployment-guide)
 - [Testing](#testing)
-- [Upgrading RegistryFactory](#upgrading-registryfactory)
+- [Upgrading FctFactory](#upgrading-fctfactory)
 - [Interacting with Contracts](#interacting-with-contracts)
 - [Complete Workflow Example](#complete-workflow-example)
 
@@ -28,7 +28,7 @@ The DPX (Decentralized Project Exchange) system enables tokenization of future c
 
 ## Architecture Components
 
-### 1. RegistryFactory (Upgradeable via Proxy)
+### 1. FctFactory (Upgradeable via Proxy)
 
 **Purpose**: Central factory contract for deploying and managing all project tokens and redemption vaults.
 
@@ -143,9 +143,9 @@ OWNER_ADDRESS=0xYourMultisigAddress
 source .env
 ```
 
-### Deploy DPX Platform (RegistryFactory)
+### Deploy DPX Platform (FctFactory)
 
-The RegistryFactory is deployed using the UUPS proxy pattern for upgradeability.
+The FctFactory is deployed using the UUPS proxy pattern for upgradeability.
 
 #### Local Deployment (Anvil)
 
@@ -154,7 +154,7 @@ The RegistryFactory is deployed using the UUPS proxy pattern for upgradeability.
 anvil
 
 # Terminal 2: Deploy
-forge script script/DeployDPX.s.sol --rpc-url anvil --broadcast
+forge script script/DeployFctFactory.s.sol --rpc-url anvil --broadcast
 ```
 
 #### Testnet Deployment (Sepolia)
@@ -163,7 +163,7 @@ forge script script/DeployDPX.s.sol --rpc-url anvil --broadcast
 ```bash
 source .env
 
-forge script script/DeployDPX.s.sol \
+forge script script/DeployFctFactory.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --private-key $PRIVATE_KEY
@@ -174,7 +174,7 @@ forge script script/DeployDPX.s.sol \
 source .env && \
 
 DERIVED_KEY=$(cast wallet private-key "$MNEMONIC" --mnemonic-index 0) && \
-forge script script/DeployDPX.s.sol \
+forge script script/DeployFctFactory.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --private-key $DERIVED_KEY
@@ -185,7 +185,7 @@ forge script script/DeployDPX.s.sol \
 source .env
 
 OWNER_ADDRESS=0xYourMultisigAddress \
-  forge script script/DeployDPX.s.sol \
+  forge script script/DeployFctFactory.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --private-key $PRIVATE_KEY
@@ -196,7 +196,7 @@ OWNER_ADDRESS=0xYourMultisigAddress \
 source .env
 
 OWNER_ADDRESS=0xYourMultisigAddress \
-  forge script script/DeployDPX.s.sol \
+  forge script script/DeployFctFactory.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --verify \
@@ -209,7 +209,7 @@ OWNER_ADDRESS=0xYourMultisigAddress \
 source .env
 
 OWNER_ADDRESS=0xYourMultisigAddress \
-  forge script script/DeployDPX.s.sol \
+  forge script script/DeployFctFactory.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --mnemonic "$MNEMONIC" \
@@ -246,23 +246,23 @@ The DPX platform has comprehensive test coverage for all contracts and workflows
 
 ```bash
 # Run all DPX-related tests
-forge test --match-contract RegistryFactory -vv
+forge test --match-contract FctFactory -vv
 forge test --match-contract RedemptionVault -vv
 
 # Run with increased verbosity
-forge test --match-contract RegistryFactory -vvv
+forge test --match-contract FctFactory -vvv
 forge test --match-contract RedemptionVault -vvv
 ```
 
 ### Run Specific Test Categories
 
 ```bash
-# RegistryFactory tests
-forge test --match-contract RegistryFactory --match-test test_Initialization -vv
-forge test --match-contract RegistryFactory --match-test test_ProposeProject -vv
-forge test --match-contract RegistryFactory --match-test test_ApproveProject -vv
-forge test --match-contract RegistryFactory --match-test test_DeployVault -vv
-forge test --match-contract RegistryFactory --match-test test_Upgrade -vv
+# FctFactory tests
+forge test --match-contract FctFactory --match-test test_Initialization -vv
+forge test --match-contract FctFactory --match-test test_ProposeProject -vv
+forge test --match-contract FctFactory --match-test test_ApproveProject -vv
+forge test --match-contract FctFactory --match-test test_DeployVault -vv
+forge test --match-contract FctFactory --match-test test_Upgrade -vv
 
 # RedemptionVault tests
 forge test --match-contract RedemptionVault --match-test test_Constructor -vv
@@ -283,7 +283,7 @@ forge test --match-test test_Integration_CompleteRedemptionSequence -vvv
 ### Gas Reporting
 
 ```bash
-forge test --match-contract RegistryFactory --gas-report
+forge test --match-contract FctFactory --gas-report
 forge test --match-contract RedemptionVault --gas-report
 ```
 
@@ -294,7 +294,7 @@ forge test --match-contract RedemptionVault --gas-report
 forge coverage
 
 # Generate detailed coverage for specific contracts
-forge coverage --match-contract RegistryFactory
+forge coverage --match-contract FctFactory
 forge coverage --match-contract RedemptionVault
 ```
 
@@ -302,7 +302,7 @@ forge coverage --match-contract RedemptionVault
 
 The test suite covers:
 
-**RegistryFactory**:
+**FctFactory**:
 - ✅ Initialization and ownership
 - ✅ Project proposals with validation
 - ✅ Project approval with automatic token deployment
@@ -325,9 +325,9 @@ The test suite covers:
 - ✅ Access control
 - ✅ Edge cases (zero supply, insufficient balance, rounding, etc.)
 
-## Upgrading RegistryFactory
+## Upgrading FctFactory
 
-The RegistryFactory uses the UUPS (Universal Upgradeable Proxy Standard) pattern for upgrades.
+The FctFactory uses the UUPS (Universal Upgradeable Proxy Standard) pattern for upgrades.
 
 ### Benefits of Upgradeability
 
@@ -358,7 +358,7 @@ source .env
 
 # Set the proxy address (the address from initial deployment)
 PROXY_ADDRESS=0xYourProxyAddress \
-  forge script script/UpgradeDPX.s.sol \
+  forge script script/UpgradeFctFactory.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --private-key $PRIVATE_KEY
@@ -369,7 +369,7 @@ PROXY_ADDRESS=0xYourProxyAddress \
 source .env
 
 PROXY_ADDRESS=0xYourProxyAddress \
-  forge script script/UpgradeDPX.s.sol \
+  forge script script/UpgradeFctFactory.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --mnemonic "$MNEMONIC" \
@@ -643,7 +643,7 @@ Here's a complete end-to-end workflow for the DPX platform:
 ```bash
 source .env
 OWNER_ADDRESS=0xMultisigAddress \
-  forge script script/DeployDPX.s.sol \
+  forge script script/DeployFctFactory.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --verify \
@@ -790,12 +790,12 @@ cast call $VAULT_ADDRESS "getAvailableStablecoin()" --rpc-url sepolia | cast --t
 
 ## Contract Source Files
 
-- **RegistryFactory**: [`src/RegistryFactory.sol`](../src/RegistryFactory.sol)
+- **FctFactory**: [`src/FctFactory.sol`](../src/FctFactory.sol)
 - **FutureCarbonToken**: [`src/FutureCarbonToken.sol`](../src/FutureCarbonToken.sol)
 - **RedemptionVault**: [`src/RedemptionVault.sol`](../src/RedemptionVault.sol)
-- **Deployment Script**: [`script/DeployDPX.s.sol`](../script/DeployDPX.s.sol)
-- **Upgrade Script**: [`script/UpgradeDPX.s.sol`](../script/UpgradeDPX.s.sol)
-- **Test Suite**: [`test/RegistryFactory.t.sol`](../test/RegistryFactory.t.sol), [`test/RedemptionVault.t.sol`](../test/RedemptionVault.t.sol)
+- **Deployment Script**: [`script/DeployFctFactory.s.sol`](../script/DeployFctFactory.s.sol)
+- **Upgrade Script**: [`script/UpgradeFctFactory.s.sol`](../script/UpgradeFctFactory.s.sol)
+- **Test Suite**: [`test/FctFactory.t.sol`](../test/FctFactory.t.sol), [`test/RedemptionVault.t.sol`](../test/RedemptionVault.t.sol)
 
 ## Additional Resources
 

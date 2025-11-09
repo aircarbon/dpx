@@ -8,7 +8,7 @@ import {FutureCarbonToken} from "./FutureCarbonToken.sol";
 import {RedemptionVault} from "./RedemptionVault.sol";
 
 /**
- * @title RegistryFactory
+ * @title FctFactory
  * @dev Central factory contract for deploying and managing project tokens and redemption vaults.
  *
  * This contract serves as the registry and deployment factory for all DPX projects.
@@ -36,7 +36,7 @@ import {RedemptionVault} from "./RedemptionVault.sol";
  * the owner can upgrade the implementation by calling upgradeToAndCall().
  * Storage layout must be preserved across upgrades (see storage gap).
  */
-contract RegistryFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
+contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
     // ============ Enums ============
 
     /// @notice Project lifecycle status

@@ -11,7 +11,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * @title FutureCarbonToken
  * @dev ERC-20 token representing future carbon credits for a specific project.
  *
- * This token is deployed by the RegistryFactory when a project is approved.
+ * This token is deployed by the FctFactory when a project is approved.
  * Each project gets its own immutable token contract (non-upgradeable).
  *
  * Features:
@@ -23,7 +23,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * - 18 decimals: Standard ERC-20 precision
  *
  * Lifecycle:
- * 1. Deployed by RegistryFactory upon project approval
+ * 1. Deployed by FctFactory upon project approval
  * 2. Initial supply minted to owner (company address)
  * 3. Tokens traded on exchange
  * 4. When project completes, tokens redeemed via RedemptionVault (burned)

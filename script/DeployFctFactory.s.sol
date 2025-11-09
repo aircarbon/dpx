@@ -2,27 +2,27 @@
 pragma solidity ^0.8.20;
 
 import {Script} from "forge-std/Script.sol";
-import {RegistryFactory} from "../src/RegistryFactory.sol";
+import {FctFactory} from "../src/FctFactory.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {console} from "forge-std/console.sol";
 
 /**
- * @title DeployDPXScript
- * @dev Deployment script for DPX Platform (RegistryFactory) using UUPS proxy pattern
+ * @title DeployFctFactoryScript
+ * @dev Deployment script for DPX Platform (FctFactory) using UUPS proxy pattern
  *
  * Configuration:
  * - OWNER_ADDRESS: Address of the owner (company multisig wallet)
  *   - If not provided, deployer becomes the owner
  *
  * Usage with private key:
- *   source .env && forge script script/DeployDPX.s.sol --rpc-url sepolia --broadcast --private-key $PRIVATE_KEY
+ *   source .env && forge script script/DeployFctFactory.s.sol --rpc-url sepolia --broadcast --private-key $PRIVATE_KEY
  *
  * Usage with mnemonic (derive private key first):
  *   source .env && DERIVED_KEY=$(cast wallet private-key "$MNEMONIC" --mnemonic-index 0) && \
- *   forge script script/DeployDPX.s.sol --rpc-url sepolia --broadcast --private-key $DERIVED_KEY
+ *   forge script script/DeployFctFactory.s.sol --rpc-url sepolia --broadcast --private-key $DERIVED_KEY
  *
  * Usage with custom owner (recommended for production):
- *   source .env && OWNER_ADDRESS=0x... forge script script/DeployDPX.s.sol --rpc-url sepolia --broadcast --private-key $PRIVATE_KEY
+ *   source .env && OWNER_ADDRESS=0x... forge script script/DeployFctFactory.s.sol --rpc-url sepolia --broadcast --private-key $PRIVATE_KEY
  *
  * Note: Add --verify --etherscan-api-key $ETHERSCAN_API_KEY if you want to verify on Etherscan
  *
@@ -34,7 +34,7 @@ import {console} from "forge-std/console.sol";
  * 2. Verify contracts on Etherscan
  * 3. Test basic functionality (propose, approve, deployVault)
  */
-contract DeployDPXScript is Script {
+contract DeployFctFactoryScript is Script {
     function run() public {
         // Calculate Foundry's default sender address (should NOT be used as owner)
         // Same calculation as in forge-std: address(uint160(uint256(keccak256("foundry default caller"))))
@@ -79,15 +79,15 @@ contract DeployDPXScript is Script {
         console.log("Owner:", ownerAddress);
         console.log("========================================\n");
 
-        // Step 1: Deploy the RegistryFactory implementation contract
-        console.log("Step 1: Deploying RegistryFactory implementation...");
-        RegistryFactory implementation = new RegistryFactory();
+        // Step 1: Deploy the FctFactory implementation contract
+        console.log("Step 1: Deploying FctFactory implementation...");
+        FctFactory implementation = new FctFactory();
         console.log("Implementation deployed at:", address(implementation));
 
         // Step 2: Encode the initializer function call
         console.log("\nStep 2: Encoding initializer data...");
         bytes memory initData = abi.encodeWithSelector(
-            RegistryFactory.initialize.selector,
+            FctFactory.initialize.selector,
             ownerAddress
         );
 
@@ -104,8 +104,8 @@ contract DeployDPXScript is Script {
         // Get the proxy address (this is what users interact with!)
         address proxyAddress = address(proxy);
 
-        // Wrap the proxy address with the RegistryFactory interface for easier interaction
-        RegistryFactory factory = RegistryFactory(proxyAddress);
+        // Wrap the proxy address with the FctFactory interface for easier interaction
+        FctFactory factory = FctFactory(proxyAddress);
 
         // Log the deployed addresses and details
         console.log("\n========================================================");
@@ -141,7 +141,7 @@ contract DeployDPXScript is Script {
         console.log("      - Approve and deploy token");
         console.log("      - Deploy vault for testing");
         console.log("");
-        console.log("Interact with RegistryFactory:");
+        console.log("Interact with FctFactory:");
         console.log("   cast call ", proxyAddress, " \"getProjectCount()\"");
         console.log("");
         console.log("========================================================");

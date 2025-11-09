@@ -2,26 +2,26 @@
 pragma solidity ^0.8.20;
 
 import {Script} from "forge-std/Script.sol";
-import {RegistryFactory} from "../src/RegistryFactory.sol";
+import {FctFactory} from "../src/FctFactory.sol";
 import {console} from "forge-std/console.sol";
 
 /**
- * @title UpgradeDPXScript
- * @dev Script to upgrade an existing DPX RegistryFactory proxy to a new implementation
+ * @title UpgradeFctFactoryScript
+ * @dev Script to upgrade an existing DPX FctFactory proxy to a new implementation
  *
- * The upgrade allows adding new features to the RegistryFactory while:
+ * The upgrade allows adding new features to the FctFactory while:
  * - Keeping the same proxy address
  * - Preserving all existing data (projects, tokens, vaults)
  * - Maintaining registry mappings
  *
  * Required Environment Variable:
- * - PROXY_ADDRESS: The address of the deployed RegistryFactory proxy contract
+ * - PROXY_ADDRESS: The address of the deployed FctFactory proxy contract
  *
  * Usage:
- *   source .env && PROXY_ADDRESS=0x... forge script script/UpgradeDPX.s.sol --rpc-url sepolia --broadcast --private-key $PRIVATE_KEY
+ *   source .env && PROXY_ADDRESS=0x... forge script script/UpgradeFctFactory.s.sol --rpc-url sepolia --broadcast --private-key $PRIVATE_KEY
  *
  * Usage with mnemonic:
- *   source .env && PROXY_ADDRESS=0x... forge script script/UpgradeDPX.s.sol --rpc-url sepolia --broadcast --mnemonic "$MNEMONIC" --mnemonic-index 0
+ *   source .env && PROXY_ADDRESS=0x... forge script script/UpgradeFctFactory.s.sol --rpc-url sepolia --broadcast --mnemonic "$MNEMONIC" --mnemonic-index 0
  *
  * Note: Add --verify --etherscan-api-key $ETHERSCAN_API_KEY if you want to verify the new implementation
  *
@@ -38,7 +38,7 @@ import {console} from "forge-std/console.sol";
  * 6. All existing projects, tokens, and vaults remain accessible
  *
  * Storage Safety:
- * The RegistryFactory uses:
+ * The FctFactory uses:
  * - Enums (ProjectStatus)
  * - Structs (Project)
  * - Mappings (projects, tokenToProjectId)
@@ -63,7 +63,7 @@ import {console} from "forge-std/console.sol";
  * - Owner remains the same
  * - All existing tokens/vaults are still mapped correctly
  */
-contract UpgradeDPXScript is Script {
+contract UpgradeFctFactoryScript is Script {
     function run() public {
         // Get the proxy address from environment variable
         address proxyAddress = vm.envAddress("PROXY_ADDRESS");
@@ -86,7 +86,7 @@ contract UpgradeDPXScript is Script {
         }
 
         // Get the existing proxy contract
-        RegistryFactory proxy = RegistryFactory(proxyAddress);
+        FctFactory proxy = FctFactory(proxyAddress);
 
         // Verify that the caller is the owner
         address owner = proxy.owner();
@@ -102,8 +102,8 @@ contract UpgradeDPXScript is Script {
         console.log("   Next Project ID:", proxy.getNextProjectId());
 
         // Step 1: Deploy the new implementation contract
-        console.log("\nStep 1: Deploying new RegistryFactory implementation...");
-        RegistryFactory newImplementation = new RegistryFactory();
+        console.log("\nStep 1: Deploying new FctFactory implementation...");
+        FctFactory newImplementation = new FctFactory();
         console.log("New implementation deployed at:", address(newImplementation));
 
         // Step 2: Upgrade the proxy to point to the new implementation

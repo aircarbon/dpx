@@ -41,7 +41,7 @@ interface IERC20Burnable is IERC20 {
  *   - User has 5,000 tokens → receives: 5,000e18 * 0.1e6 / 1e18 = 500e6 USDT
  *
  * Lifecycle:
- * 1. Deployed by RegistryFactory when project nears completion
+ * 1. Deployed by FctFactory when project nears completion
  * 2. Owner (company) deposits stablecoin proceeds
  * 3. Owner calls activateRedemption() to calculate rate and enable swaps
  * 4. Token holders call swap() to redeem their tokens

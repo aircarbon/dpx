@@ -45,7 +45,7 @@ The ACR system provides a complete on-chain governance solution with:
 
 The DPX (Decentralized Project Exchange) platform enables tokenization of future carbon credits:
 
-- **RegistryFactory**: Central factory for deploying and managing project tokens and vaults (upgradeable)
+- **FctFactory**: Central factory for deploying and managing project tokens and vaults (upgradeable)
 - **FutureCarbonToken**: ERC-20 tokens representing future carbon credits for specific projects
 - **RedemptionVault**: Manages USDT redemption after carbon credit sales
 
@@ -128,7 +128,7 @@ forge build
 - `src/ACRGovernor.sol` - OpenZeppelin Governor for DAO
 
 #### DPX Platform Contracts
-- `src/RegistryFactory.sol` - Factory for project tokens and vaults
+- `src/FctFactory.sol` - Factory for project tokens and vaults
 - `src/FutureCarbonToken.sol` - ERC-20 tokens for future carbon credits
 - `src/RedemptionVault.sol` - USDT redemption management
 
@@ -140,5 +140,5 @@ forge build
 - `script/ACRGovernor.s.sol` - Deploy Governor contract
 
 #### DPX Platform Scripts
-- `script/DeployDPX.s.sol` - Deploy DPX platform (RegistryFactory)
-- `script/UpgradeDPX.s.sol` - Upgrade DPX platform (RegistryFactory)
+- `script/DeployFctFactory.s.sol` - Deploy FctFactory
+- `script/UpgradeFctFactory.s.sol` - Upgrade FctFactory

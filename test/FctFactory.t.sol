@@ -3,20 +3,20 @@ pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
-import {RegistryFactory} from "../src/RegistryFactory.sol";
+import {FctFactory} from "../src/FctFactory.sol";
 import {FutureCarbonToken} from "../src/FutureCarbonToken.sol";
 import {RedemptionVault} from "../src/RedemptionVault.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
- * @title RegistryFactoryTest
- * @dev Comprehensive test suite for RegistryFactory contract
+ * @title FctFactoryTest
+ * @dev Comprehensive test suite for FctFactory contract
  * Tests initialization, project lifecycle, deployments, queries, and UUPS upgrades
  */
-contract RegistryFactoryTest is Test {
-    RegistryFactory public factory;
-    RegistryFactory public implementation;
+contract FctFactoryTest is Test {
+    FctFactory public factory;
+    FctFactory public implementation;
     ERC1967Proxy public proxy;
 
     address public owner;
@@ -64,11 +64,11 @@ contract RegistryFactoryTest is Test {
         mockStablecoin = address(0x4);
 
         // Deploy implementation
-        implementation = new RegistryFactory();
+        implementation = new FctFactory();
 
         // Encode initializer data
         bytes memory initData = abi.encodeWithSelector(
-            RegistryFactory.initialize.selector,
+            FctFactory.initialize.selector,
             owner
         );
 
@@ -76,7 +76,7 @@ contract RegistryFactoryTest is Test {
         proxy = new ERC1967Proxy(address(implementation), initData);
 
         // Wrap proxy with interface
-        factory = RegistryFactory(address(proxy));
+        factory = FctFactory(address(proxy));
     }
 
     // ========== Initialization Tests ==========
@@ -93,16 +93,16 @@ contract RegistryFactoryTest is Test {
     }
 
     function test_CannotInitializeImplementation() public {
-        RegistryFactory newImpl = new RegistryFactory();
+        FctFactory newImpl = new FctFactory();
         vm.expectRevert();
         newImpl.initialize(owner);
     }
 
     function test_RevertInitializeWithZeroAddress() public {
-        RegistryFactory newImpl = new RegistryFactory();
+        FctFactory newImpl = new FctFactory();
 
         bytes memory initData = abi.encodeWithSelector(
-            RegistryFactory.initialize.selector,
+            FctFactory.initialize.selector,
             address(0)
         );
 
@@ -129,7 +129,7 @@ contract RegistryFactoryTest is Test {
         assertEq(factory.getProjectCount(), 1);
         assertEq(factory.getNextProjectId(), 1);
 
-        RegistryFactory.Project memory project = factory.getProject(0);
+        FctFactory.Project memory project = factory.getProject(0);
         assertEq(project.projectId, 0);
         assertEq(project.name, PROJECT_NAME);
         assertEq(project.symbol, PROJECT_SYMBOL);
@@ -137,7 +137,7 @@ contract RegistryFactoryTest is Test {
         assertEq(project.developer, developer1);
         assertEq(project.tokenAddress, address(0));
         assertEq(project.vaultAddress, address(0));
-        assertEq(uint(project.status), uint(RegistryFactory.ProjectStatus.Pending));
+        assertEq(uint(project.status), uint(FctFactory.ProjectStatus.Pending));
         assertEq(project.proposedAt, block.timestamp);
         assertEq(project.processedAt, 0);
         assertEq(project.metadata, PROJECT_METADATA);
@@ -176,7 +176,7 @@ contract RegistryFactoryTest is Test {
         assertEq(projectId3, 2);
         assertEq(factory.getProjectCount(), 3);
 
-        RegistryFactory.Project memory project2 = factory.getProject(1);
+        FctFactory.Project memory project2 = factory.getProject(1);
         assertEq(project2.developer, developer2);
         assertEq(project2.name, "Project 2");
     }
@@ -223,7 +223,7 @@ contract RegistryFactoryTest is Test {
             ""
         );
 
-        RegistryFactory.Project memory project = factory.getProject(projectId);
+        FctFactory.Project memory project = factory.getProject(projectId);
         assertEq(project.metadata, "");
     }
 
@@ -238,7 +238,7 @@ contract RegistryFactoryTest is Test {
             longMetadata
         );
 
-        RegistryFactory.Project memory project = factory.getProject(projectId);
+        FctFactory.Project memory project = factory.getProject(projectId);
         assertEq(project.metadata, longMetadata);
     }
 
@@ -258,8 +258,8 @@ contract RegistryFactoryTest is Test {
         // Note: We skip strict event checking here because tokenAddress is generated
         factory.approveProject(projectId);
 
-        RegistryFactory.Project memory project = factory.getProject(projectId);
-        assertEq(uint(project.status), uint(RegistryFactory.ProjectStatus.Approved));
+        FctFactory.Project memory project = factory.getProject(projectId);
+        assertEq(uint(project.status), uint(FctFactory.ProjectStatus.Approved));
         assertTrue(project.tokenAddress != address(0));
         assertEq(project.vaultAddress, address(0));
         assertEq(project.processedAt, block.timestamp);
@@ -289,15 +289,15 @@ contract RegistryFactoryTest is Test {
         factory.approveProject(projectId1);
         factory.approveProject(projectId2);
 
-        RegistryFactory.Project memory project1 = factory.getProject(projectId1);
-        RegistryFactory.Project memory project2 = factory.getProject(projectId2);
+        FctFactory.Project memory project1 = factory.getProject(projectId1);
+        FctFactory.Project memory project2 = factory.getProject(projectId2);
 
         assertTrue(project1.tokenAddress != address(0));
         assertTrue(project2.tokenAddress != address(0));
         assertTrue(project1.tokenAddress != project2.tokenAddress);
 
-        assertEq(uint(project1.status), uint(RegistryFactory.ProjectStatus.Approved));
-        assertEq(uint(project2.status), uint(RegistryFactory.ProjectStatus.Approved));
+        assertEq(uint(project1.status), uint(FctFactory.ProjectStatus.Approved));
+        assertEq(uint(project2.status), uint(FctFactory.ProjectStatus.Approved));
     }
 
     function test_RevertApproveProjectNotOwner() public {
@@ -365,8 +365,8 @@ contract RegistryFactoryTest is Test {
 
         factory.denyProject(projectId);
 
-        RegistryFactory.Project memory project = factory.getProject(projectId);
-        assertEq(uint(project.status), uint(RegistryFactory.ProjectStatus.Denied));
+        FctFactory.Project memory project = factory.getProject(projectId);
+        assertEq(uint(project.status), uint(FctFactory.ProjectStatus.Denied));
         assertEq(project.tokenAddress, address(0));
         assertEq(project.vaultAddress, address(0));
         assertEq(project.processedAt, block.timestamp);
@@ -438,7 +438,7 @@ contract RegistryFactoryTest is Test {
         // Deploy vault
         address vaultAddress = factory.deployVault(projectId, mockStablecoin);
 
-        RegistryFactory.Project memory projectAfter = factory.getProject(projectId);
+        FctFactory.Project memory projectAfter = factory.getProject(projectId);
         assertEq(projectAfter.vaultAddress, vaultAddress);
         assertTrue(vaultAddress != address(0));
 
@@ -544,7 +544,7 @@ contract RegistryFactoryTest is Test {
             PROJECT_METADATA
         );
 
-        RegistryFactory.Project memory project = factory.getProject(projectId);
+        FctFactory.Project memory project = factory.getProject(projectId);
         assertEq(project.projectId, projectId);
         assertEq(project.name, PROJECT_NAME);
         assertEq(project.developer, developer1);
@@ -556,7 +556,7 @@ contract RegistryFactoryTest is Test {
     }
 
     function test_GetAllProjectsEmpty() public view {
-        RegistryFactory.Project[] memory projects = factory.getAllProjects();
+        FctFactory.Project[] memory projects = factory.getAllProjects();
         assertEq(projects.length, 0);
     }
 
@@ -564,7 +564,7 @@ contract RegistryFactoryTest is Test {
         vm.prank(developer1);
         factory.proposeProject(PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, PROJECT_METADATA);
 
-        RegistryFactory.Project[] memory projects = factory.getAllProjects();
+        FctFactory.Project[] memory projects = factory.getAllProjects();
         assertEq(projects.length, 1);
         assertEq(projects[0].name, PROJECT_NAME);
     }
@@ -579,7 +579,7 @@ contract RegistryFactoryTest is Test {
         vm.prank(developer1);
         factory.proposeProject("Project 3", "PRJ3", 3000 * 10**18, "meta3");
 
-        RegistryFactory.Project[] memory projects = factory.getAllProjects();
+        FctFactory.Project[] memory projects = factory.getAllProjects();
         assertEq(projects.length, 3);
         assertEq(projects[0].name, "Project 1");
         assertEq(projects[1].name, "Project 2");
@@ -595,8 +595,8 @@ contract RegistryFactoryTest is Test {
 
         factory.approveProject(projectId2); // Approve one
 
-        RegistryFactory.Project[] memory pending = factory.getProjectsByStatus(
-            RegistryFactory.ProjectStatus.Pending
+        FctFactory.Project[] memory pending = factory.getProjectsByStatus(
+            FctFactory.ProjectStatus.Pending
         );
 
         assertEq(pending.length, 1);
@@ -616,8 +616,8 @@ contract RegistryFactoryTest is Test {
         factory.approveProject(projectId1);
         factory.approveProject(projectId2);
 
-        RegistryFactory.Project[] memory approved = factory.getProjectsByStatus(
-            RegistryFactory.ProjectStatus.Approved
+        FctFactory.Project[] memory approved = factory.getProjectsByStatus(
+            FctFactory.ProjectStatus.Approved
         );
 
         assertEq(approved.length, 2);
@@ -634,8 +634,8 @@ contract RegistryFactoryTest is Test {
 
         factory.denyProject(projectId1);
 
-        RegistryFactory.Project[] memory denied = factory.getProjectsByStatus(
-            RegistryFactory.ProjectStatus.Denied
+        FctFactory.Project[] memory denied = factory.getProjectsByStatus(
+            FctFactory.ProjectStatus.Denied
         );
 
         assertEq(denied.length, 1);
@@ -643,8 +643,8 @@ contract RegistryFactoryTest is Test {
     }
 
     function test_GetProjectsByStatusEmpty() public view {
-        RegistryFactory.Project[] memory approved = factory.getProjectsByStatus(
-            RegistryFactory.ProjectStatus.Approved
+        FctFactory.Project[] memory approved = factory.getProjectsByStatus(
+            FctFactory.ProjectStatus.Approved
         );
         assertEq(approved.length, 0);
     }
@@ -781,10 +781,10 @@ contract RegistryFactoryTest is Test {
         // Record state before upgrade
         uint256 projectCountBefore = factory.getProjectCount();
         address ownerBefore = factory.owner();
-        RegistryFactory.Project memory projectBefore = factory.getProject(projectId);
+        FctFactory.Project memory projectBefore = factory.getProject(projectId);
 
         // Deploy new implementation
-        RegistryFactory newImplementation = new RegistryFactory();
+        FctFactory newImplementation = new FctFactory();
 
         // Upgrade
         factory.upgradeToAndCall(address(newImplementation), "");
@@ -793,7 +793,7 @@ contract RegistryFactoryTest is Test {
         assertEq(factory.owner(), ownerBefore);
         assertEq(factory.getProjectCount(), projectCountBefore);
 
-        RegistryFactory.Project memory projectAfter = factory.getProject(projectId);
+        FctFactory.Project memory projectAfter = factory.getProject(projectId);
         assertEq(projectAfter.projectId, projectBefore.projectId);
         assertEq(projectAfter.name, projectBefore.name);
         assertEq(projectAfter.tokenAddress, projectBefore.tokenAddress);
@@ -806,7 +806,7 @@ contract RegistryFactoryTest is Test {
     }
 
     function test_RevertUpgradeNotOwner() public {
-        RegistryFactory newImplementation = new RegistryFactory();
+        FctFactory newImplementation = new FctFactory();
 
         vm.prank(user1);
         vm.expectRevert();
@@ -836,26 +836,26 @@ contract RegistryFactoryTest is Test {
         address vault1 = factory.getVaultForToken(token1);
 
         // Perform upgrade
-        RegistryFactory newImpl = new RegistryFactory();
+        FctFactory newImpl = new FctFactory();
         factory.upgradeToAndCall(address(newImpl), "");
 
         // Verify all state preserved
         assertEq(factory.getProjectCount(), 3);
 
-        RegistryFactory.Project memory p1 = factory.getProject(projectId1);
-        assertEq(uint(p1.status), uint(RegistryFactory.ProjectStatus.Approved));
+        FctFactory.Project memory p1 = factory.getProject(projectId1);
+        assertEq(uint(p1.status), uint(FctFactory.ProjectStatus.Approved));
         assertEq(p1.tokenAddress, token1);
         assertEq(p1.vaultAddress, vault1);
 
-        RegistryFactory.Project memory p2 = factory.getProject(projectId2);
-        assertEq(uint(p2.status), uint(RegistryFactory.ProjectStatus.Pending));
+        FctFactory.Project memory p2 = factory.getProject(projectId2);
+        assertEq(uint(p2.status), uint(FctFactory.ProjectStatus.Pending));
 
-        RegistryFactory.Project memory p3 = factory.getProject(projectId3);
-        assertEq(uint(p3.status), uint(RegistryFactory.ProjectStatus.Denied));
+        FctFactory.Project memory p3 = factory.getProject(projectId3);
+        assertEq(uint(p3.status), uint(FctFactory.ProjectStatus.Denied));
 
         // Verify functionality still works
         factory.approveProject(projectId2);
-        assertEq(uint(factory.getProject(projectId2).status), uint(RegistryFactory.ProjectStatus.Approved));
+        assertEq(uint(factory.getProject(projectId2).status), uint(FctFactory.ProjectStatus.Approved));
     }
 
     // ========== Integration Tests ==========
@@ -870,14 +870,14 @@ contract RegistryFactoryTest is Test {
             PROJECT_METADATA
         );
 
-        RegistryFactory.Project memory project = factory.getProject(projectId);
-        assertEq(uint(project.status), uint(RegistryFactory.ProjectStatus.Pending));
+        FctFactory.Project memory project = factory.getProject(projectId);
+        assertEq(uint(project.status), uint(FctFactory.ProjectStatus.Pending));
 
         // 2. Owner approves project
         factory.approveProject(projectId);
 
         project = factory.getProject(projectId);
-        assertEq(uint(project.status), uint(RegistryFactory.ProjectStatus.Approved));
+        assertEq(uint(project.status), uint(FctFactory.ProjectStatus.Approved));
         assertTrue(project.tokenAddress != address(0));
 
         // 3. Token is tradeable
@@ -917,11 +917,11 @@ contract RegistryFactoryTest is Test {
         factory.denyProject(project2);
 
         // Verify status filtering
-        RegistryFactory.Project[] memory approved = factory.getProjectsByStatus(
-            RegistryFactory.ProjectStatus.Approved
+        FctFactory.Project[] memory approved = factory.getProjectsByStatus(
+            FctFactory.ProjectStatus.Approved
         );
-        RegistryFactory.Project[] memory denied = factory.getProjectsByStatus(
-            RegistryFactory.ProjectStatus.Denied
+        FctFactory.Project[] memory denied = factory.getProjectsByStatus(
+            FctFactory.ProjectStatus.Denied
         );
 
         assertEq(approved.length, 2);
@@ -932,9 +932,9 @@ contract RegistryFactoryTest is Test {
         factory.deployVault(project3, mockStablecoin);
 
         // Verify all projects maintain correct state
-        RegistryFactory.Project memory p1 = factory.getProject(project1);
-        RegistryFactory.Project memory p2 = factory.getProject(project2);
-        RegistryFactory.Project memory p3 = factory.getProject(project3);
+        FctFactory.Project memory p1 = factory.getProject(project1);
+        FctFactory.Project memory p2 = factory.getProject(project2);
+        FctFactory.Project memory p3 = factory.getProject(project3);
 
         assertTrue(p1.vaultAddress != address(0));
         assertEq(p2.vaultAddress, address(0));
@@ -981,8 +981,8 @@ contract RegistryFactoryTest is Test {
         vm.prank(newOwner);
         factory.approveProject(projectId);
 
-        RegistryFactory.Project memory project = factory.getProject(projectId);
-        assertEq(uint(project.status), uint(RegistryFactory.ProjectStatus.Approved));
+        FctFactory.Project memory project = factory.getProject(projectId);
+        assertEq(uint(project.status), uint(FctFactory.ProjectStatus.Approved));
     }
 
     function test_LargeNumberOfProjects() public {
@@ -1009,21 +1009,21 @@ contract RegistryFactoryTest is Test {
             factory.denyProject(i);
         }
 
-        RegistryFactory.Project[] memory allProjects = factory.getAllProjects();
+        FctFactory.Project[] memory allProjects = factory.getAllProjects();
         assertEq(allProjects.length, 20);
 
-        RegistryFactory.Project[] memory approved = factory.getProjectsByStatus(
-            RegistryFactory.ProjectStatus.Approved
+        FctFactory.Project[] memory approved = factory.getProjectsByStatus(
+            FctFactory.ProjectStatus.Approved
         );
         assertEq(approved.length, 10);
 
-        RegistryFactory.Project[] memory denied = factory.getProjectsByStatus(
-            RegistryFactory.ProjectStatus.Denied
+        FctFactory.Project[] memory denied = factory.getProjectsByStatus(
+            FctFactory.ProjectStatus.Denied
         );
         assertEq(denied.length, 5);
 
-        RegistryFactory.Project[] memory pending = factory.getProjectsByStatus(
-            RegistryFactory.ProjectStatus.Pending
+        FctFactory.Project[] memory pending = factory.getProjectsByStatus(
+            FctFactory.ProjectStatus.Pending
         );
         assertEq(pending.length, 5);
     }
