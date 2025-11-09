@@ -17,8 +17,8 @@ Complete documentation for the ACR governance token, Governor contract, and DAO 
 
 The ACR system provides a complete on-chain governance solution built on Avalanche using Foundry and OpenZeppelin Contracts. It consists of two main smart contracts:
 
-1. **ACT Token (ACR in production)** - An upgradeable ERC-20 governance token with voting capabilities
-2. **ACTGovernor** - An OpenZeppelin Governor contract for DAO governance
+1. **ACR Token (ACR in production)** - An upgradeable ERC-20 governance token with voting capabilities
+2. **ACRGovernor** - An OpenZeppelin Governor contract for DAO governance
 
 ### Key Components
 
@@ -30,9 +30,9 @@ The ACR system provides a complete on-chain governance solution built on Avalanc
 
 ## Architecture
 
-### ACT Token Contract
+### ACR Token Contract
 
-**Location**: `src/ACT.sol`
+**Location**: `src/ACR.sol`
 
 **Extends OpenZeppelin Contracts**:
 - `Initializable` - Initialization pattern for upgradeable contracts
@@ -50,9 +50,9 @@ The ACR system provides a complete on-chain governance solution built on Avalanc
 - `pause()` / `unpause()` - Pause/unpause transfers (owner only)
 - `_authorizeUpgrade(address)` - Control upgrades (owner only)
 
-### ACTGovernor Contract
+### ACRGovernor Contract
 
-**Location**: `src/ACTGovernor.sol`
+**Location**: `src/ACRGovernor.sol`
 
 **Extends OpenZeppelin Contracts**:
 - `Governor` - Core governance functionality
@@ -143,7 +143,7 @@ source .env
 # Terminal 1: Start local node
 anvil
 
-# Terminal 2: Deploy with default parameters (ACT Token, ACT, 1,000,000 supply)
+# Terminal 2: Deploy with default parameters (ACR Token, ACR, 1,000,000 supply)
 forge script script/Deploy.s.sol --rpc-url anvil --broadcast
 
 # Deploy with custom parameters
@@ -200,8 +200,8 @@ After deploying the ACR token, deploy the Governor contract:
 source .env
 
 # Set the token address from previous deployment
-ACT_TOKEN_ADDRESS="0xYourTokenProxyAddress" \
-  forge script script/ACTGovernor.s.sol \
+ACR_TOKEN_ADDRESS="0xYourTokenProxyAddress" \
+  forge script script/ACRGovernor.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --mnemonics "$MNEMONIC" \
@@ -249,14 +249,14 @@ forge test -vvv
 ### Run Specific Test Contracts
 
 ```bash
-# Run ACT token tests
-forge test --match-contract ACTTest -vv
+# Run ACR token tests
+forge test --match-contract ACRTest -vv
 
-# Run basic ACT tests
-forge test --match-contract ACTBasic -vv
+# Run basic ACR tests
+forge test --match-contract ACRBasic -vv
 
 # Run Governor tests
-forge test --match-contract ACTGovernor -vv
+forge test --match-contract ACRGovernor -vv
 ```
 
 ### Run Specific Tests
@@ -289,7 +289,7 @@ forge coverage
 
 ## Upgrading the Token
 
-The ACT token uses the UUPS (Universal Upgradeable Proxy Standard) pattern for upgrades.
+The ACR token uses the UUPS (Universal Upgradeable Proxy Standard) pattern for upgrades.
 
 ### Benefits of Upgradeability
 
@@ -569,9 +569,9 @@ See: **[ACR Deployment Workflow](ACR_DEPLOYMENT.md)**
 
 ## Contract Source Files
 
-- Token Contract: [`src/ACT.sol`](../src/ACT.sol)
-- Governor Contract: [`src/ACTGovernor.sol`](../src/ACTGovernor.sol)
+- Token Contract: [`src/ACR.sol`](../src/ACR.sol)
+- Governor Contract: [`src/ACRGovernor.sol`](../src/ACRGovernor.sol)
 - Deployment Script: [`script/Deploy.s.sol`](../script/Deploy.s.sol)
-- Governor Deployment: [`script/ACTGovernor.s.sol`](../script/ACTGovernor.s.sol)
+- Governor Deployment: [`script/ACRGovernor.s.sol`](../script/ACRGovernor.s.sol)
 - Upgrade Script: [`script/Upgrade.s.sol`](../script/Upgrade.s.sol)
-- Test Suite: [`test/ACT.t.sol`](../test/ACT.t.sol), [`test/ACTGovernor.t.sol`](../test/ACTGovernor.t.sol)
+- Test Suite: [`test/ACR.t.sol`](../test/ACR.t.sol), [`test/ACRGovernor.t.sol`](../test/ACRGovernor.t.sol)

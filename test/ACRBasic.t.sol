@@ -2,17 +2,17 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {ACT} from "../src/ACT.sol";
+import {ACR} from "../src/ACR.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {console} from "forge-std/console.sol";
 
 /**
- * @title ACTBasicTest
- * @dev Basic test suite for ACT Token
+ * @title ACRBasicTest
+ * @dev Basic test suite for ACR Token
  */
-contract ACTBasicTest is Test {
-    ACT public token;
-    ACT public implementation;
+contract ACRBasicTest is Test {
+    ACR public token;
+    ACR public implementation;
     ERC1967Proxy public proxy;
     address public deployer;
     address public user1;
@@ -25,13 +25,13 @@ contract ACTBasicTest is Test {
         user2 = address(0x2);
 
         // Deploy implementation
-        implementation = new ACT();
+        implementation = new ACR();
 
         // Encode initializer data
         bytes memory initData = abi.encodeWithSelector(
-            ACT.initialize.selector,
-            "ACT Token",
-            "ACT",
+            ACR.initialize.selector,
+            "ACR Token",
+            "ACR",
             initialSupply
         );
 
@@ -39,7 +39,7 @@ contract ACTBasicTest is Test {
         proxy = new ERC1967Proxy(address(implementation), initData);
 
         // Wrap proxy with interface
-        token = ACT(address(proxy));
+        token = ACR(address(proxy));
     }
 
     function test_InitialSupply() public {
@@ -48,8 +48,8 @@ contract ACTBasicTest is Test {
     }
 
     function test_TokenMetadata() public view {
-        assertEq(token.name(), "ACT Token");
-        assertEq(token.symbol(), "ACT");
+        assertEq(token.name(), "ACR Token");
+        assertEq(token.symbol(), "ACR");
         assertEq(token.decimals(), 18);
     }
 

@@ -9,10 +9,10 @@ import {GovernorVotesQuorumFraction} from "@openzeppelin/contracts/governance/ex
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 
 /**
- * @title ACTGovernor
- * @dev Basic OpenZeppelin Governor implementation for ACT token
+ * @title ACRGovernor
+ * @dev Basic OpenZeppelin Governor implementation for ACR token
  */
-contract ACTGovernor is
+contract ACRGovernor is
     Governor,
     GovernorSettings,
     GovernorCountingSimple,
@@ -20,8 +20,8 @@ contract ACTGovernor is
     GovernorVotesQuorumFraction
 {
     /**
-     * @dev Constructor for ACT Governor
-     * @param _token The ACT token address (must implement IVotes/ERC20Votes)
+     * @dev Constructor for ACR Governor
+     * @param _token The ACR token address (must implement IVotes/ERC20Votes)
      * @param _votingDelay Delay (in blocks) between proposal creation and voting start
      * @param _votingPeriod Duration (in blocks) for voting on proposals
      * @param _proposalThreshold Minimum number of votes required to create a proposal
@@ -34,7 +34,7 @@ contract ACTGovernor is
         uint256 _proposalThreshold,
         uint256 _quorumPercentage
     )
-        Governor("ACT Governor")
+        Governor("ACR Governor")
         GovernorSettings(_votingDelay, _votingPeriod, _proposalThreshold)
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(_quorumPercentage)

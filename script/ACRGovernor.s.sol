@@ -2,17 +2,17 @@
 pragma solidity ^0.8.20;
 
 import {Script} from "forge-std/Script.sol";
-import {ACTGovernor} from "../src/ACTGovernor.sol";
+import {ACRGovernor} from "../src/ACRGovernor.sol";
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import {console} from "forge-std/console.sol";
 
-// forge script script/ACTGovernor.s.sol --rpc-url sepolia --broadcast
-contract ACTGovernorScript is Script {
+// forge script script/ACRGovernor.s.sol --rpc-url sepolia --broadcast
+contract ACRGovernorScript is Script {
     function run() public {
         // string memory root = vm.projectRoot();
         // string memory path = string.concat(
         //     root,
-        //     "/broadcast/ACT.s.sol/",
+        //     "/broadcast/ACR.s.sol/",
         //     vm.toString(block.chainid),
         //     "/run-latest.json"
         // );
@@ -22,7 +22,7 @@ contract ACTGovernorScript is Script {
         //     (address)
         // );
 
-        address actTokenAddress = address(vm.envAddress("ACT_TOKEN_ADDRESS"));
+        address actTokenAddress = address(vm.envAddress("ACR_TOKEN_ADDRESS"));
         uint48 votingDelay = uint48(vm.envOr("DAO_VOTING_DELAY", uint256(7200)));
         uint32 votingPeriod = uint32(vm.envOr("DAO_VOTING_PERIOD", uint256(50400)));
         uint256 proposalThresholdWhole = vm.envOr("DAO_PROPOSAL_THRESHOLD", uint256(1000));
@@ -39,7 +39,7 @@ contract ACTGovernorScript is Script {
             vm.startBroadcast();
         }
 
-        ACTGovernor governor = new ACTGovernor(
+        ACRGovernor governor = new ACRGovernor(
             IVotes(actTokenAddress),
             votingDelay,
             votingPeriod,
@@ -49,10 +49,10 @@ contract ACTGovernorScript is Script {
 
         vm.stopBroadcast();
 
-        console.log("=== ACT Governor Deployment ===");
+        console.log("=== ACR Governor Deployment ===");
         console.log("Governor deployed at:", address(governor));
         console.log("Governor name:", governor.name());
-        console.log("ACT Token address:", actTokenAddress);
+        console.log("ACR Token address:", actTokenAddress);
         console.log("---");
         console.log("Governance Parameters:");
         console.log("- Voting Delay:", votingDelay, "blocks");

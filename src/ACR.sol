@@ -12,7 +12,7 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
 import {NoncesUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/NoncesUpgradeable.sol";
 
 /**
- * @title ACT Token
+ * @title ACR Token
  * @dev ERC-20 token implementation using UUPS proxy pattern with the following features:
  * - Burnable: Token holders can burn their own tokens
  * - Mintable: Owner can mint new tokens
@@ -38,7 +38,7 @@ import {NoncesUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Nonce
  * - Add new state variables before existing ones
  * Always add new state variables at the end or use the __gap array.
  */
-contract ACT is
+contract ACR is
     Initializable,
     ERC20Upgradeable,
     ERC20BurnableUpgradeable,
@@ -55,8 +55,8 @@ contract ACT is
 
     /**
      * @dev Initializes the token contract (replaces constructor for upgradeable contracts)
-     * @param name The name of the token (e.g., "ACT Token")
-     * @param symbol The symbol of the token (e.g., "ACT")
+     * @param name The name of the token (e.g., "ACR Token")
+     * @param symbol The symbol of the token (e.g., "ACR")
      * @param initialSupply The initial supply of tokens to mint to the deployer
      *
      * NOTE: This function can only be called once during proxy deployment

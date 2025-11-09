@@ -2,18 +2,18 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {ACT} from "../src/ACT.sol";
+import {ACR} from "../src/ACR.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {console} from "forge-std/console.sol";
 
 /**
- * @title ACTTest
- * @dev Comprehensive test suite for ACT Token
+ * @title ACRTest
+ * @dev Comprehensive test suite for ACR Token
  * Tests initialization, all token features, and upgrade functionality
  */
-contract ACTTest is Test {
-    ACT public token;
-    ACT public implementation;
+contract ACRTest is Test {
+    ACR public token;
+    ACR public implementation;
     ERC1967Proxy public proxy;
 
     address public owner;
@@ -27,13 +27,13 @@ contract ACTTest is Test {
         user2 = address(0x2);
 
         // Deploy implementation
-        implementation = new ACT();
+        implementation = new ACR();
 
         // Encode initializer data
         bytes memory initData = abi.encodeWithSelector(
-            ACT.initialize.selector,
-            "ACT Token",
-            "ACT",
+            ACR.initialize.selector,
+            "ACR Token",
+            "ACR",
             initialSupply
         );
 
@@ -41,14 +41,14 @@ contract ACTTest is Test {
         proxy = new ERC1967Proxy(address(implementation), initData);
 
         // Wrap proxy with interface
-        token = ACT(address(proxy));
+        token = ACR(address(proxy));
     }
 
     // ========== Initialization Tests ==========
 
     function test_Initialization() public view {
-        assertEq(token.name(), "ACT Token");
-        assertEq(token.symbol(), "ACT");
+        assertEq(token.name(), "ACR Token");
+        assertEq(token.symbol(), "ACR");
         assertEq(token.totalSupply(), initialSupply);
         assertEq(token.balanceOf(owner), initialSupply);
         assertEq(token.owner(), owner);
@@ -60,7 +60,7 @@ contract ACTTest is Test {
     }
 
     function test_CannotInitializeImplementation() public {
-        ACT newImpl = new ACT();
+        ACR newImpl = new ACR();
         vm.expectRevert();
         newImpl.initialize("Test", "TST", 1000);
     }
@@ -129,7 +129,7 @@ contract ACTTest is Test {
         address ownerBefore = token.owner();
 
         // Deploy new implementation
-        ACT newImplementation = new ACT();
+        ACR newImplementation = new ACR();
 
         // Upgrade
         token.upgradeToAndCall(address(newImplementation), "");
@@ -147,7 +147,7 @@ contract ACTTest is Test {
     }
 
     function test_RevertUpgradeNotOwner() public {
-        ACT newImplementation = new ACT();
+        ACR newImplementation = new ACR();
 
         vm.prank(user1);
         vm.expectRevert();
@@ -171,7 +171,7 @@ contract ACTTest is Test {
         uint256 user1Votes = token.getVotes(user1);
 
         // Perform upgrade
-        ACT newImpl = new ACT();
+        ACR newImpl = new ACR();
         token.upgradeToAndCall(address(newImpl), "");
 
         // Verify all state preserved
@@ -206,7 +206,7 @@ contract ACTTest is Test {
         uint256 votesBefore = token.getVotes(user1);
 
         // Upgrade
-        ACT newImpl = new ACT();
+        ACR newImpl = new ACR();
         token.upgradeToAndCall(address(newImpl), "");
 
         // Votes should be preserved
@@ -230,7 +230,7 @@ contract ACTTest is Test {
 
     function test_BurnAfterUpgrade() public {
         // Upgrade first
-        ACT newImpl = new ACT();
+        ACR newImpl = new ACR();
         token.upgradeToAndCall(address(newImpl), "");
 
         // Burn should still work
@@ -254,7 +254,7 @@ contract ACTTest is Test {
         token.pause();
 
         // Upgrade while paused
-        ACT newImpl = new ACT();
+        ACR newImpl = new ACR();
         token.upgradeToAndCall(address(newImpl), "");
 
         // Unpause

@@ -2,13 +2,13 @@
 pragma solidity ^0.8.20;
 
 import {Script} from "forge-std/Script.sol";
-import {ACT} from "../src/ACT.sol";
+import {ACR} from "../src/ACR.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {console} from "forge-std/console.sol";
 
 /**
  * @title UpgradeScript
- * @dev Script to upgrade an existing ACT proxy to a new implementation
+ * @dev Script to upgrade an existing ACR proxy to a new implementation
  *
  * Required Environment Variable:
  * - PROXY_ADDRESS: The address of the deployed proxy contract
@@ -46,7 +46,7 @@ contract UpgradeScript is Script {
         }
 
         // Get the existing proxy contract
-        ACT proxy = ACT(proxyAddress);
+        ACR proxy = ACR(proxyAddress);
 
         // Verify that the caller is the owner
         address owner = proxy.owner();
@@ -54,7 +54,7 @@ contract UpgradeScript is Script {
         console.log("Upgrading from:", msg.sender);
 
         // Step 1: Deploy the new implementation contract
-        ACT newImplementation = new ACT();
+        ACR newImplementation = new ACR();
         console.log("New implementation deployed at:", address(newImplementation));
 
         // Step 2: Upgrade the proxy to point to the new implementation

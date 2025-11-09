@@ -2,16 +2,16 @@
 pragma solidity ^0.8.20;
 
 import {Test} from "forge-std/Test.sol";
-import {ACT} from "../src/ACT.sol";
-import {ACTGovernor} from "../src/ACTGovernor.sol";
+import {ACR} from "../src/ACR.sol";
+import {ACRGovernor} from "../src/ACRGovernor.sol";
 import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 import {console} from "forge-std/console.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-// forge test --match-contract ACTGovernorTest -vv
-contract ACTGovernorTest is Test {
-    ACT public token;
-    ACTGovernor public governor;
+// forge test --match-contract ACRGovernorTest -vv
+contract ACRGovernorTest is Test {
+    ACR public token;
+    ACRGovernor public governor;
 
     address public deployer;
     address public voter1;
@@ -31,23 +31,23 @@ contract ACTGovernorTest is Test {
         voter3 = makeAddr("voter3");
 
         // Deploy implementation contract
-        ACT implementation = new ACT();
+        ACR implementation = new ACR();
 
         // Prepare initialization data
         bytes memory initData = abi.encodeWithSelector(
-            ACT.initialize.selector,
-            "ACT Token",
-            "ACT",
+            ACR.initialize.selector,
+            "ACR Token",
+            "ACR",
             INITIAL_SUPPLY
         );
 
         // Deploy proxy and initialize
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
 
-        // Wrap proxy in ACT interface
-        token = ACT(address(proxy));
+        // Wrap proxy in ACR interface
+        token = ACR(address(proxy));
 
-        governor = new ACTGovernor(
+        governor = new ACRGovernor(
             token,
             VOTING_DELAY,
             VOTING_PERIOD,
@@ -72,7 +72,7 @@ contract ACTGovernorTest is Test {
     }
 
     function test_GovernorDeployment() public view {
-        assertEq(governor.name(), "ACT Governor");
+        assertEq(governor.name(), "ACR Governor");
         assertEq(address(governor.token()), address(token));
         assertEq(governor.votingDelay(), VOTING_DELAY);
         assertEq(governor.votingPeriod(), VOTING_PERIOD);

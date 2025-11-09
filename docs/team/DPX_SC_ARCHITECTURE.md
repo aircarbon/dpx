@@ -169,6 +169,17 @@ forge script script/DeployDPX.s.sol \
   --private-key $PRIVATE_KEY
 ```
 
+**Deploy with deployer as owner (using mnemonics):**
+```bash
+source .env && \
+
+DERIVED_KEY=$(cast wallet private-key "$MNEMONIC" --mnemonic-index 0) && \
+forge script script/DeployDPX.s.sol \
+  --rpc-url sepolia \
+  --broadcast \
+  --private-key $DERIVED_KEY
+```
+
 **Deploy with custom owner (recommended for production):**
 ```bash
 source .env

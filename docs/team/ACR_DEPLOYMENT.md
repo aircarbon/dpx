@@ -1,4 +1,4 @@
-### Workflow for launching the ACT token, creating multisig wallets for the Treasury and Team Vesting, creating vesting schedule with Hedgey, creating DAO with Tally.
+### Workflow for launching the ACR token, creating multisig wallets for the Treasury and Team Vesting, creating vesting schedule with Hedgey, creating DAO with Tally.
 
 Token Launch flow:
 1. Create Treasury Multisig account (for Bill, Thom, Dom)
@@ -14,7 +14,7 @@ Token Launch flow:
 2. Deploy a token
 ```bash
 source .env
-TOKEN_NAME="ACT Test N" TOKEN_SYMBOL="ACT-Test-N" INITIAL_SUPPLY=0 \
+TOKEN_NAME="ACR Test N" TOKEN_SYMBOL="ACR-Test-N" INITIAL_SUPPLY=0 \
   forge script script/Deploy.s.sol \
   --rpc-url sepolia \
   --broadcast \
@@ -37,8 +37,8 @@ cast send 0xTokenAddr \
 ```
 1. Go to safe.global
 2. Click on "New transaction" button -> "Transaction builder"
-3. Enter ACT token's address (the proxy address!)
-4. Enter ABI (copy from the ./out/ACT.sol/ACT.json) - just the "abi" value (the array)
+3. Enter ACR token's address (the proxy address!)
+4. Enter ABI (copy from the ./out/ACR.sol/ACR.json) - just the "abi" value (the array)
 5. Select "mint" method
 6. Enter Treasury Multisig address (created in step 1)
 7. Enter amount: 1000000000000000000000000000
@@ -54,7 +54,7 @@ cast send 0xTokenAddr \
 ```
 ```bash
 source .env
-ACT_TOKEN_ADDRESS="0xACTTokenAddr" forge script script/ACTGovernor.s.sol --rpc-url sepolia --broadcast --mnemonics "$MNEMONIC" --mnemonic-indexes 0
+ACR_TOKEN_ADDRESS="0xACRTokenAddr" forge script script/ACRGovernor.s.sol --rpc-url sepolia --broadcast --mnemonics "$MNEMONIC" --mnemonic-indexes 0
 ```
 ```
 3. Go to tally.xyz -> "Use Tally" -> "Connect wallet" -> "Wallet connect" -> select network -> "View all" -> "Safe" -> it will open Safe Global, connect to one of the admin accounts of the Treasury Multisig accounts and select the Treasury Multisig account.
@@ -91,7 +91,7 @@ ACT_TOKEN_ADDRESS="0xACTTokenAddr" forge script script/ACTGovernor.s.sol --rpc-u
 ```
 1. Go to app.hedgey.finance -> "Vesting Plans" -> "View on Safe" (near "Issued Vesting Plans") -> Connect with Treasury Multisig
 2. It will open a Hedgey window inside the Safe Global -> "Create Vesting Plan"
-3. Enter the ACT token address, select unlock frequency, vesting term and cliff, click "Next"
+3. Enter the ACR token address, select unlock frequency, vesting term and cliff, click "Next"
 4. Allow admin transfer of plans. "Allow on-chain governance" - ???, click "Next"
 5. Enter Team Vesting Multisig address, enter 150,000,000 as token amount (15% from total supply), select a vesting start date, click "Next"
 6. Review and confirm, sign on Safe Global, sign with another signer if needed to execute the transaction

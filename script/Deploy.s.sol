@@ -2,17 +2,17 @@
 pragma solidity ^0.8.20;
 
 import {Script} from "forge-std/Script.sol";
-import {ACT} from "../src/ACT.sol";
+import {ACR} from "../src/ACR.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {console} from "forge-std/console.sol";
 
 /**
  * @title DeployScript
- * @dev Deployment script for ACT Token using UUPS proxy pattern
+ * @dev Deployment script for ACR Token using UUPS proxy pattern
  *
  * Token Configuration (passed as environment variables in command):
- * - TOKEN_NAME: Name of the token (default: "ACT Token")
- * - TOKEN_SYMBOL: Symbol of the token (default: "ACT")
+ * - TOKEN_NAME: Name of the token (default: "ACR Token")
+ * - TOKEN_SYMBOL: Symbol of the token (default: "ACR")
  * - INITIAL_SUPPLY: Initial supply in whole tokens (default: 1000000)
  *
  * Usage with default token parameters:
@@ -29,8 +29,8 @@ import {console} from "forge-std/console.sol";
 contract DeployScript is Script {
     function run() public {
         // Get token configuration from environment variables with defaults
-        string memory tokenName = vm.envOr("TOKEN_NAME", string("ACT Token"));
-        string memory tokenSymbol = vm.envOr("TOKEN_SYMBOL", string("ACT"));
+        string memory tokenName = vm.envOr("TOKEN_NAME", string("ACR Token"));
+        string memory tokenSymbol = vm.envOr("TOKEN_SYMBOL", string("ACR"));
         uint256 initialSupplyWhole = vm.envOr("INITIAL_SUPPLY", uint256(1_000_000));
 
         // Convert to wei (18 decimals)
@@ -48,12 +48,12 @@ contract DeployScript is Script {
         }
 
         // Step 1: Deploy the implementation contract
-        ACT implementation = new ACT();
+        ACR implementation = new ACR();
         console.log("Implementation deployed at:", address(implementation));
 
         // Step 2: Encode the initializer function call
         bytes memory initData = abi.encodeWithSelector(
-            ACT.initialize.selector,
+            ACR.initialize.selector,
             tokenName,
             tokenSymbol,
             initialSupply
@@ -71,11 +71,11 @@ contract DeployScript is Script {
         // Get the proxy address (this is what users interact with!)
         address proxyAddress = address(proxy);
 
-        // Wrap the proxy address with the ACT interface for easier interaction
-        ACT token = ACT(proxyAddress);
+        // Wrap the proxy address with the ACR interface for easier interaction
+        ACR token = ACR(proxyAddress);
 
         // Log the deployed addresses and details
-        console.log("\n=== ACT Token Deployment ===");
+        console.log("\n=== ACR Token Deployment ===");
         console.log("Proxy address (MAIN):", proxyAddress);
         console.log("Implementation address:", address(implementation));
         console.log("---");

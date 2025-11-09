@@ -27,8 +27,8 @@ Not deployed for now.
 
 The ACR system provides a complete on-chain governance solution with:
 
-- **ACR Token (ACT.sol)**: Upgradeable ERC-20 token with voting capabilities, built using OpenZeppelin's ERC20Votes standard
-- **ACTGovernor**: OpenZeppelin Governor contract for DAO governance integration with Tally
+- **ACR Token**: Upgradeable ERC-20 token with voting capabilities, built using OpenZeppelin's ERC20Votes standard
+- **ACRGovernor**: OpenZeppelin Governor contract for DAO governance integration with Tally
 - **Treasury Management**: Multi-signature wallet integration via Safe Global
 - **Vesting Support**: Integration with Hedgey Finance for team vesting schedules
 
@@ -101,7 +101,7 @@ forge test
 forge test -vv
 
 # Run specific test contract
-forge test --match-contract ACTTest -vv
+forge test --match-contract ACRTest -vv
 
 # Run with gas reporting
 forge test --gas-report
@@ -124,8 +124,8 @@ forge build
 ### Contract Reference
 
 #### ACR Governance Contracts
-- `src/ACT.sol` - Upgradeable ERC-20 governance token
-- `src/ACTGovernor.sol` - OpenZeppelin Governor for DAO
+- `src/ACR.sol` - Upgradeable ERC-20 governance token
+- `src/ACRGovernor.sol` - OpenZeppelin Governor for DAO
 
 #### DPX Platform Contracts
 - `src/RegistryFactory.sol` - Factory for project tokens and vaults
@@ -137,7 +137,7 @@ forge build
 #### ACR Governance Scripts
 - `script/Deploy.s.sol` - Deploy ACR token
 - `script/Upgrade.s.sol` - Upgrade ACR token implementation
-- `script/ACTGovernor.s.sol` - Deploy Governor contract
+- `script/ACRGovernor.s.sol` - Deploy Governor contract
 
 #### DPX Platform Scripts
 - `script/DeployDPX.s.sol` - Deploy DPX platform (RegistryFactory)

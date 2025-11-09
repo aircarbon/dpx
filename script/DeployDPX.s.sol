@@ -14,14 +14,15 @@ import {console} from "forge-std/console.sol";
  * - OWNER_ADDRESS: Address of the owner (company multisig wallet)
  *   - If not provided, deployer becomes the owner
  *
- * Usage with deployer as owner:
+ * Usage with private key:
  *   source .env && forge script script/DeployDPX.s.sol --rpc-url sepolia --broadcast --private-key $PRIVATE_KEY
+ *
+ * Usage with mnemonic (derive private key first):
+ *   source .env && DERIVED_KEY=$(cast wallet private-key "$MNEMONIC" --mnemonic-index 0) && \
+ *   forge script script/DeployDPX.s.sol --rpc-url sepolia --broadcast --private-key $DERIVED_KEY
  *
  * Usage with custom owner (recommended for production):
  *   source .env && OWNER_ADDRESS=0x... forge script script/DeployDPX.s.sol --rpc-url sepolia --broadcast --private-key $PRIVATE_KEY
- *
- * Usage with mnemonic:
- *   source .env && forge script script/DeployDPX.s.sol --rpc-url sepolia --broadcast --mnemonic "$MNEMONIC" --mnemonic-index 0
  *
  * Note: Add --verify --etherscan-api-key $ETHERSCAN_API_KEY if you want to verify on Etherscan
  *
@@ -35,35 +36,41 @@ import {console} from "forge-std/console.sol";
  */
 contract DeployDPXScript is Script {
     function run() public {
-        // Get configuration from environment variables
-        address ownerAddress;
+        // Calculate Foundry's default sender address (should NOT be used as owner)
+        // Same calculation as in forge-std: address(uint160(uint256(keccak256("foundry default caller"))))
+        address FOUNDRY_DEFAULT_SENDER = address(uint160(uint256(keccak256("foundry default caller"))));
 
-        // Try to get owner address from environment, otherwise use deployer
+        // Start broadcast - Foundry will use whatever was passed via CLI:
+        // - --private-key flag
+        // - --mnemonics flag
+        // - --account flag
+        // - or default to the foundry default sender if nothing was provided
+        vm.startBroadcast();
+
+        // Get deployer address - Foundry already knows this from CLI args
+        address deployerAddress = msg.sender;
+
+        // Validate we're not using the Foundry default sender
+        require(
+            deployerAddress != FOUNDRY_DEFAULT_SENDER,
+            "ERROR: Using Foundry default sender! Please provide --private-key, --mnemonics, or --account"
+        );
+
+        // Get owner address from environment, otherwise use deployer
+        address ownerAddress;
         try vm.envAddress("OWNER_ADDRESS") returns (address addr) {
-            ownerAddress = addr;
-            console.log("Using OWNER_ADDRESS from env:", ownerAddress);
+            // Don't use OWNER_ADDRESS if it's set to the Foundry default or zero
+            if (addr != FOUNDRY_DEFAULT_SENDER && addr != address(0)) {
+                ownerAddress = addr;
+                console.log("Using OWNER_ADDRESS from env:", ownerAddress);
+            } else {
+                ownerAddress = deployerAddress;
+                console.log("OWNER_ADDRESS is invalid, using deployer address instead");
+            }
         } catch {
             // Owner will be set to deployer (msg.sender)
-            // We'll log this after startBroadcast so we know who the deployer is
-            ownerAddress = address(0); // Temporary, will be set to msg.sender
-            console.log("OWNER_ADDRESS not set, will use deployer address");
-        }
-
-        // Try to get private key, if not available script will use mnemonic from CLI
-        uint256 deployerPrivateKey;
-
-        try vm.envUint("PRIVATE_KEY") returns (uint256 pk) {
-            deployerPrivateKey = pk;
-            vm.startBroadcast(deployerPrivateKey);
-        } catch {
-            // If no private key, broadcast will use mnemonic from CLI args
-            vm.startBroadcast();
-        }
-
-        // If owner address was not provided, use deployer
-        if (ownerAddress == address(0)) {
-            ownerAddress = msg.sender;
-            console.log("Owner will be deployer:", ownerAddress);
+            ownerAddress = deployerAddress;
+            console.log("OWNER_ADDRESS not set, using deployer address");
         }
 
         console.log("\n=== Starting DPX Platform Deployment ===");
