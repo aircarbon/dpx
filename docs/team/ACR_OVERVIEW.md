@@ -216,20 +216,20 @@ ACR_TOKEN_ADDRESS="0xYourTokenProxyAddress" \
 | **Avalanche Fuji** | `fuji` | [Avalanche Faucet](https://faucet.avax.network/) | [SnowTrace](https://testnet.snowtrace.io/) |
 | **Local Anvil** | `anvil` | N/A (built-in) | N/A |
 
-For Avalanche Fuji deployment with Blockscout verification:
+For Avalanche Fuji deployment with Snowtrace verification:
 ```bash
 source .env
 
-TOKEN_NAME="My Token" TOKEN_SYMBOL="MTK" INITIAL_SUPPLY=1000000 \
+TOKEN_NAME="ACX RWA DEV" TOKEN_SYMBOL="ACR-DEV" INITIAL_SUPPLY=1000000000 \
   forge script script/Deploy.s.sol \
   --rpc-url fuji \
   --broadcast \
   --verify \
-  --verifier blockscout \
-  --verifier-url https://api.routescan.io/v2/network/testnet/evm/43113/etherscan \
   --mnemonics "$MNEMONIC" \
   --mnemonic-indexes 0
 ```
+
+Note: Ensure `SNOWTRACE_FUJI_API_KEY` is set in your `.env` file for Fuji verification.
 
 ## Testing
 

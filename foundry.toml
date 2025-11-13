@@ -24,5 +24,7 @@ avalanche = "${AVALANCHE_RPC_URL}"
 mainnet = { key = "${ETHERSCAN_API_KEY}" }
 sepolia = { key = "${ETHERSCAN_API_KEY}" }
 holesky = { key = "${ETHERSCAN_API_KEY}" }
+fuji = { key = "${SNOWTRACE_FUJI_API_KEY}", url = "https://api-testnet.snowtrace.io/api" }
+avalanche = { key = "${SNOWTRACE_API_KEY}", url = "https://api.snowtrace.io/api" }
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

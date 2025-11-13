@@ -22,6 +22,24 @@ TOKEN_NAME="ACR Test N" TOKEN_SYMBOL="ACR-Test-N" INITIAL_SUPPLY=0 \
   --mnemonic-indexes 0
 ```
 
+2a. (Optional) Verify the contracts on block explorer
+Simply add the `--verify` flag to the deployment command. Ensure you have the correct API key set in your `.env` file:
+- For Sepolia: `ETHERSCAN_API_KEY`
+- For Avalanche Fuji: `SNOWTRACE_FUJI_API_KEY`
+- For Avalanche Mainnet: `SNOWTRACE_API_KEY`
+
+Example with verification:
+```bash
+source .env
+TOKEN_NAME="ACR Test N" TOKEN_SYMBOL="ACR-Test-N" INITIAL_SUPPLY=0 \
+  forge script script/Deploy.s.sol \
+  --rpc-url sepolia \
+  --broadcast \
+  --verify \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-indexes 0
+```
+
 3. Change the ownership to the Treasury Multisig address
 ```bash
 source .env
