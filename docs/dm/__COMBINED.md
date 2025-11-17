@@ -29,7 +29,7 @@ All source files available in `src/` directory for reference.
 
 ## 1. Strategic Vision
 
-The ACXRWA platform will evolve from the current **Carbon Project Exchange (CPX)** centralized architecture to support a parallel **Decentralized Project Exchange (DPX)** operating mode. This transformation represents a fundamental shift enabling the platform to serve two distinct market segments—**institutional custodial** and **DeFi-native non-custodial**—from a single unified codebase.
+The ACXRWA platform will evolve from the current **Carbon Project Exchange (CPX)** centralized architecture to support a parallel **Decentralized Project Exchange (DPX)** operating mode. This transformation represents a fundamental shift enabling the platform to serve two distinct market segments—**institutional custodial** and **DeFi-native non-custodial**—from a single unified codebase, governed by the **ACR token** (1 billion supply, Avalanche mainnet).
 
 **Core Innovation:**  
 Single platform, dual custody models, unified liquidity across centralized and decentralized carbon markets.
@@ -63,9 +63,9 @@ Single platform, dual custody models, unified liquidity across centralized and d
 | **Authentication** | Username/password (JWT sessions) | Wallet signature (SIWE standard) |
 | **FCT Custody** | STMv2 ledger (ACX-controlled) | ERC-20 tokens (user wallets) |
 | **Payment Rails** | Fiat USD (bank accounts) | USDC/USDT (on-chain) |
-| **Settlement** | Admin-signed atomic swap | SwapBox bilateral escrow |
+| **Settlement** | Admin-signed atomic swap | SwapBox atomic signature-based swap |
 | **Network** | ACXNET (Custom L1) | Avalanche C-Chain |
-| **Gas Fees** | $0 (subsidized) | ~$0.42 per swap |
+| **Gas Fees** | $0 (subsidized) | ~$0.15 per swap |
 
 ### 2.2 Trading Platform: Marketplace v2 (MBv2)
 
@@ -89,63 +89,55 @@ Negotiation (Counter-Offers)
     ↓
 Seller Accepts Final Terms
     ↓
-Settlement (CPX: transferOrTrade | DPX: SwapBox)
+Settlement (CPX: transferOrTrade | DPX: SwapBox atomic execution)
 ```
 
 ---
 
-## 3. SwapBox: Trustless Bilateral Settlement
+## 3. SwapBox: Trustless Atomic Settlement
 
-The **SwapBox** smart contract is the cornerstone innovation enabling DPX to eliminate ACX custody while maintaining exchange-grade reliability.
+The **SwapBox** smart contract enables DPX to eliminate ACX custody through atomic, signature-based swaps. Built on **AirSwap's audited SwapERC20** architecture, SwapBox executes FCT ↔ stablecoin trades in a single transaction without ever holding user funds.
 
 ### 3.1 Mechanism
 
-SwapBox operates as a bilateral escrow: once a trade is negotiated and accepted on MBv2, the ACX backend configures a SwapBox instance. Both parties then deposit their assets (buyer: USDC, seller: FCT). Once both deposits are confirmed, each party withdraws the counterparty's asset—achieving atomic settlement without trusted intermediaries.
+SwapBox uses **EIP-712 signed orders** for atomic execution. Buyers create and sign orders off-chain (e.g., "buy 100 FCT for 1000 USDC"). Sellers execute swaps on-chain by submitting the buyer's signature. The contract verifies the signature and atomically transfers tokens in a single transaction—either the entire swap succeeds or it reverts.
 
 **Contract Interface:**
 ```solidity
 interface ISwapBox {
-    function configureSwap(
-        address buyer,
-        address seller,
-        address buyerAsset,     // USDC contract
-        uint256 buyerAmount,
-        address sellerAsset,    // FCT ERC-20
-        uint256 sellerAmount,
-        uint256 expiryTimestamp
-    ) external returns (uint256 swapId);
-
-    function depositBuyerAsset(uint256 swapId) external;
-    function depositSellerAsset(uint256 swapId) external;
-    function withdrawBuyerAsset(uint256 swapId) external;
-    function withdrawSellerAsset(uint256 swapId) external;
-    function cancelSwap(uint256 swapId) external;
+    function swap(
+        uint256 nonce,
+        uint256 expiry,
+        address signerWallet,
+        address signerToken,    // USDC
+        uint256 signerAmount,
+        address senderToken,    // FCT
+        uint256 senderAmount,
+        uint8 v, bytes32 r, bytes32 s
+    ) external;
 }
 ```
 
 ### 3.2 Settlement Flow
 
-1. **MBv2 Negotiation Complete:** Seller accepts buyer's trade request
-2. **Swap Configuration:** Backend deploys unique SwapBox instance with `swapId`
-3. **Buyer Deposits:** Approves USDC, calls `depositBuyerAsset()` → USDC held in escrow
-4. **Seller Deposits:** Approves FCT, calls `depositSellerAsset()` → FCT held in escrow
-5. **Ready to Settle:** Once both deposited, status becomes `ReadyToSettle`
-6. **Atomic Withdrawal:** 
-   - Buyer withdraws FCT tokens
-   - Seller withdraws USDC
-7. **Expiry Protection:** 24-hour deadline; either party can reclaim if incomplete
+1. **Order Creation:** Buyer signs order off-chain (EIP-712 signature)
+2. **Order Discovery:** DPX displays order in UI (DPX never custodies funds)
+3. **Atomic Execution:** Seller submits transaction with buyer's signature
+4. **Verification:** SwapBox verifies signature, checks expiry and nonce
+5. **Token Transfer:** FCT → buyer, USDC → seller, fee → treasury/staking (atomic)
 
 **Key Features:**
-- Multiple concurrent swaps (1000s simultaneously)
-- No ACX custody—fully trustless
-- Gas-optimized: ~400K gas (~$0.42 on Avalanche)
-- Time-bounded with automatic refunds
+- **Non-custodial:** DPX never holds funds, only provides order discovery
+- **Atomic:** Single transaction (all transfers succeed or entire swap reverts)
+- **Gas-efficient:** ~50K gas (~$0.15 on Avalanche @ 25 nAVAX, $30 AVAX)
+- **AirSwap heritage:** Built on audited, battle-tested SwapERC20
+- **Modified fees:** Always collected in stablecoins (USDT/USDC), never illiquid FCT (enforced through the UI, FCT buyer is always a signer, FCT seller always executes the transaction)
 
 ---
 
 ## 4. True ERC-20 FCT Tokens
 
-Unlike CPX where FCTs exist only as ledger entries, DPX mints **real ERC-20 tokens** to project owners' wallets via the **FctTokenFactory** contract.
+Unlike CPX where FCTs exist only as ledger entries, DPX mints **real ERC-20 tokens** to project owners' wallets via the **FctFactory** contract, which manages project proposals, approvals, and token deployment.
 
 ### 4.1 DeFi Composability
 
@@ -159,11 +151,19 @@ ERC-20 FCTs on Avalanche unlock ecosystem integrations:
 
 ### 4.2 Metadata & Compliance
 
-Each FCT ERC-20 embeds immutable metadata:
-- Project ID, vintage year
-- Registry (Verra, Gold Standard, ART)
-- Methodology
-- Compliance attributes (CORSIA, Article 6)
+Each FCT ERC-20 embeds immutable metadata defining a **standard for future carbon tokens**:
+- **Project ID:** Unique identifier
+- **Vintage Year:** Carbon credit issuance year (uint256)
+- **Registry ID:** "VCS-1234", "GS-5678" (Verra, Gold Standard, ART)
+- **Country:** ISO-3166 country code
+- **Methodology:** "VM0042", "ACM0002" (project methodology)
+- **CORSIA Eligible:** Boolean flag for aviation offset eligibility
+- **Article 6 Authorized:** Boolean for Paris Agreement compliance
+
+**Deployment Workflow:**
+1. Developer proposes project via `FctFactory.proposeProject()`
+2. Multisig (Phase 1) or DAO (Phase 3) reviews proposal
+3. `approveProject()` deploys FutureCarbonToken ERC-20 with metadata
 
 ---
 
@@ -181,7 +181,7 @@ FEATURE_DPX_MODE=true  // or false
 if (config.FEATURE_DPX_MODE) {
   authenticateWallet(signature, address);      // DPX
   mintErc20Fct(ownerWallet, amount);           // Avalanche
-  settleViaSwapBox(tradeRequest);              // Bilateral escrow
+  settleViaSwapBox(signedOrder);               // Atomic signature-based
 } else {
   authenticateCredentials(username, password); // CPX
   mintLedgerFct(ledgerAddress, amount);        // ACXNET
@@ -208,37 +208,76 @@ if (config.FEATURE_DPX_MODE) {
 
 ---
 
-## 6. Deployment Roadmap
+## 6. Phased Roadmap
 
-**Timeline:** 6-month rollout targeting Phase 2 cross-mode liquidity by end Q2 2026 (June 30, 2026).
+**Timeline:** 6-month rollout targeting full cross-mode liquidity and staking by end Q2 2026 (June 30, 2026).
 
 ### Phase 1A – Foundation (Nov 2025: 4 weeks)
-- Deploy SwapBox + FctTokenFactory to Avalanche Fuji testnet
+**Infrastructure & Network Design (ACX)**
 - Design ACXNET subnet configuration
 - Implement SIWE authentication
 - Begin security audit (Halborn, Trail of Bits)
 
+**Smart Contract Deployment (DPX) - Avalanceh Mainnet**
+- Deploy ACR token (1B supply, ERC-20)
+- Set up Safe multisig treasury controls for ACR
+- Deploy Hedgey vesting contracts for team/investors
+
+**Smart Contract Deployment (DPX) - Fuji Testnet**
+- Deploy FctFactory for project proposals, approvals, FCT minting
+- Deploy SwapBox for atomic FCT ↔ stablecoin swaps (zero fees)
+- Deploy RedemptionVault template
+- Set up Safe multisig treasury controls for FctFactory and SwapBox
+- Establish Safe multisig approval process for FctFactory projects
+
 ### Phase 1B – Development Sprint (Dec 2025: 4 weeks)
+**Platform Development (ACX)**
 - Complete WalletConnect integration (Avalanche)
-- Build SwapBox deposit UI
 - Dual-network backend refactoring
-- Load testing (1000+ concurrent orders)
+- Load testing (1,000+ concurrent orders)
+
+**DPX Operations Launch (DPX)**
+- Build FctFactory and SwapBox UI
+- Begin onboarding first FCT projects
+- External audit completion (FctFactory, FutureCarbonToken, RedemptionVault)
+
 
 ### Phase 1C – Network Launches (Jan-Feb 2026: 8 weeks)
-- **ACXNET Launch:** Deploy STMv2, migrate ACX/CPX from Polygon (hard cutover)
-- **Avalanche Launch:** Deploy SwapBox + FctFactory to mainnet
+**Network Deployment (ACX)**
+- ACXNET Launch: Deploy STMv2, migrate ACX/CPX from Polygon (hard cutover)
 - Onboard handpicked crypto-native projects and buyers
 
+**Smart Contract Deployment (DPX) - Avalanche Mainnet**
+- Deploy FctFactory + SwapBox to Avalanche mainnet
+- Approve and onboard FCT projects
+- Enable zero-fee atomic swaps
+
+
 ### Phase 1D – Production Scale (Mar-Apr 2026: 8 weeks)
+
+**Ecosystem Expansion (ACX)**
 - Expand DPX to additional crypto-native participants
 - ACX/CPX fully operational on ACXNET
 - Investigate DEX liquidity pool appetite
-- Launch $ACR token staking
 
-### Phase 2 – Cross-Mode Bridge (May-Jun 2026: 8 weeks)
+**Staking & Fee Collection Launch (DPX)**
+- Deploy ACR staking contract (Curve-style, multi-token fee support)
+- Enable SwapBox fees (sent to staking contract)
+- Implement fee distribution: USDT, USDC, DAI to ACR stakers
+- Optional: 50% fee discount for stakers
+
+### Phase 2 – Cross-Mode Bridge & DAO Governance (May-Jun 2026: 8 weeks)
+**Advanced Infrastructure (ACX)**
 - ACXNET ↔ Avalanche bridge for FCT wrapping
 - Unified order book (CPX bids match DPX asks)
 - Market maker incentives ($ACR rewards)
+
+**DAO Transition and further ACR integration (DPX)**
+- Transfer ownership of ACR token, treasury and DPX: Safe multisig → Tally DAO (after sufficient ACR vesting)
+- Projects must stake ACR tokens to submit proposals to the FctFactory
+- A portion of SwapBox fees is allocated to ACR buyback and burn
+- Enable ACR holder voting on: project approvals, fee parameters, required ACR stake for project proposals, what share of fees goes to ACR buyback and burn
+
 
 ---
 
@@ -267,25 +306,42 @@ While DPX uses wallet-based login, compliance requirements adapt to regulatory c
 
 ## 8. Economic Model Integration
 
-### 8.1 $ACR Token Utility
+### 8.1 ACR Token Fundamentals
+- **Total Supply:** 1,000,000,000 ACR (fixed, no inflation)
+- **Token Standard:** ERC-20 (OpenZeppelin) + additional functionality
+- **Network:** Avalanche C-Chain (43114)
+- **Ownership:** Safe multisig (Phase 1) → Tally DAO (Phase 2)
+- **Distribution:** Team/investor cliff and vesting via Hedgey platform; treasury for ecosystem growth
 
-**0. Marketplace Access:** Burn $ACR to list projects (anti-spam mechanism)
+### 8.2 Value Accrual Mechanisms
+**Staking & Fee Distribution**
+- Stake ACR to earn proportional share of SwapBox fees (USDT, USDC, DAI)
+- Distribution pro-rata by staked amount × lock duration
+- Optional 50% swap fee discount for stakers
 
-**DPX-Specific:**
-1. Swap fee discounts (stake $ACR → 50% gas reduction)
-2. Governance rights (vote on stablecoins, chains, KYC policies)
-3. Liquidity mining (earn $ACR providing FCT/USDC liquidity)
-4. Premium features (advanced DeFi tools)
+**Buyback & Burn**
+- Safe multisig (Phase 1) or Tally DAO (Phase 2) determined portion of SwapBox fees allocated to ACR buyback
+- Purchased tokens permanently burned, reducing circulating supply
+- After bridge deployment: unified revenue from both DPX swap fees and CPX trading fees (ACXNET)
 
-### 8.2 Buyback & Burn
+**Fee Flow**
+- SwapBox swap → Fee (stablecoin) → Staking contract → ACR stakers + ACR buyback and burn
 
-Unified revenue pool from both CPX and DPX:
-- CPX trading fees (STMv2 settlements)
-- DPX swap fees (paid in $ACR)
-- Project listing fees (burned $ACR)
-- → Open market $ACR buyback → burn
+### 8.3 Governance & Utility
+**DAO Voting Rights:**
+- Approve/deny FctFactory project proposals
+- Set SwapBox fee parameters and allocation (staking vs. buyback)
+- Determine required ACR stake for project submissions
+- Upgrade protocol implementations (UUPS)
 
-**Result:** Token value accrues from total throughput, not mode-specific.
+**Project Proposal Stake:**
+- Projects must stake ACR to submit to FctFactory (anti-spam)
+- Stake amount governed by DAO vote
+
+### Economic Progression:
+- Phase 1A-1C (Nov 2025 - Feb 2026): Zero fees drive adoption
+- Phase 1D (Mar-Apr 2026): Staking and fee distribution activate
+- Phase 2 (May-Jun 2026): Full DAO governance, buyback & burn, cross-mode revenue capture
 
 ---
 
@@ -304,8 +360,8 @@ Unified revenue pool from both CPX and DPX:
 
 **Technical:**
 - Swap completion rate >95%
-- Settlement time <5 minutes
-- Gas cost <$1 (Avalanche)
+- Settlement time: instant (single transaction)
+- Gas cost <$0.20 (Avalanche)
 - ACXNET uptime >99.9%
 
 **Business:**
@@ -454,15 +510,15 @@ if (FEATURE_DPX_MODE) {
 
 **Implementation:**
 
-**FctTokenFactory Contract:**
-Deploys unique ERC-20 per project-vintage with embedded metadata (registry, methodology, compliance attributes).
+**FctFactory Contract:**
+Manages project lifecycle (propose → approve/deny) and deploys unique ERC-20 per project-vintage with embedded metadata standard.
 
 **Minting Process (DPX):**
-1. Admin approves project
-2. Triggers `apx.mintFctTokens` (DPX mode)
-3. System deploys `FctToken` ERC-20 on Avalanche C-Chain
-4. Mints to project owner's **wallet** (not ledger)
-5. ERC-20 address stored in database (`x_asset.erc20_address`)
+1. Developer calls `FctFactory.proposeProject(name, symbol, supply, metadata)`
+2. Multisig (Phase 1) or DAO (Phase 2) reviews proposal
+3. `approveProject(projectId)` deploys FutureCarbonToken ERC-20
+4. Tokens minted to developer's wallet (not ledger)
+5. Token address stored in database for reference
 
 **DeFi Composability:**
 - Uniswap-style DEXs (Trader Joe, Pangolin)
@@ -499,38 +555,13 @@ Before submitting trade request acceptance, buyer approves USDC to SwapBox contr
 ## 20. SwapBox Settlement (DPX)
 
 **Implementation:**
+Sellers create signed orders off-chain; buyers execute atomically on-chain:
 
-Post-MBv2 acceptance, backend configures SwapBox:
-
-```typescript
-// services/mb2/actions/executeTradeSwapBox.action.ts
-async function executeTradeSwapBox(tradeRequest: TradeRequest) {
-  const swapBox = new ethers.Contract(SWAPBOX_ADDRESS, swapBoxAbi, signer);
-  
-  const tx = await swapBox.configureSwap(
-    tradeRequest.buyerWallet,
-    tradeRequest.sellerWallet,
-    USDC_ADDRESS_AVALANCHE,
-    tradeRequest.price * tradeRequest.quantity,
-    tradeRequest.fctTokenAddress,
-    tradeRequest.quantity,
-    Math.floor(Date.now() / 1000) + 86400 // 24 hour expiry
-  );
-  
-  const receipt = await tx.wait();
-  const swapId = receipt.events[0].args.swapId;
-  
-  // Notify both parties to deposit
-  await notifier.send(tradeRequest.buyerUserId, { 
-    type: 'DEPOSIT_USDC_REQUIRED', 
-    swapId 
-  });
-  await notifier.send(tradeRequest.sellerUserId, { 
-    type: 'DEPOSIT_FCT_REQUIRED', 
-    swapId 
-  });
-}
-```
+1. **Seller:** Signs order off-chain (EIP-712) with terms (FCT amount, USDT amount, fee, expiry)
+2. **DPX UI:** Displays order (no custody, just discovery)
+3. **Buyer:** Submits transaction calling `SwapBox.swap()` with seller's signature
+4. **Contract:** Verifies signature, checks nonce/expiry, atomically transfers tokens
+5. **Result:** FCT → buyer, USDT → seller, fee → treasury/staking (stablecoin, all or nothing)
 
 ---
 
@@ -544,11 +575,11 @@ async function executeTradeSwapBox(tradeRequest: TradeRequest) {
 |-----------|--------------|--------------|--------------|
 | **Authentication** | Credentials | Wallet (SIWE) | Session management |
 | **Marketplace** | MBv2 bilateral | MBv2 bilateral | 100% shared |
-| **FCT Minting** | STMv2 ledger (ACXNET) | ERC-20 deploy (Avalanche) | Project validation |
+| **FCT Minting** | STMv2 ledger (ACXNET) | FctFactory deploy (Avalanche) | Project validation |
 | **Listings** | Seller lists on MBv2 | Same | MBv2 engine |
 | **Trade Requests** | Buyer submits | Same | MBv2 negotiation |
 | **Balance Queries** | Ledger read (ACXNET) | ERC-20 read (Avalanche) | Display logic |
-| **Settlement** | `transferOrTrade()` | SwapBox escrow | MBv2 acceptance trigger |
+| **Settlement** | `transferOrTrade()` | SwapBox atomic | Order signature |
 
 ### 21.2 Frontend Changes (React/TypeScript)
 
@@ -574,9 +605,11 @@ async function executeTradeSwapBox(tradeRequest: TradeRequest) {
 ### 21.4 Smart Contracts (Solidity)
 
 **New (Avalanche C-Chain):**
-- `FctTokenFactory.sol` – Deploys ERC-20 FCTs
-- `SwapBox.sol` – Bilateral escrow (see Part VI for full implementation)
-- `FctToken.sol` – Standard ERC-20 per vintage
+- `ACR.sol` – Governance token (1B supply, already deployed)
+- `FctFactory.sol` – Project registry, proposal/approval, FCT deployment
+- `SwapBox.sol` – Atomic swaps (AirSwap SwapERC20-based)
+- `RedemptionVault.sol` – USDT distribution for mature projects
+- `Staking.sol` – ACR staking with multi-token fee distribution (Phase 2)
 
 **Existing (ACXNET):**
 - `STMv2.sol` – Centralized ledger (unchanged, CPX-only)
@@ -615,9 +648,9 @@ async function executeTradeSwapBox(tradeRequest: TradeRequest) {
 ### 22.2 Avalanche C-Chain (DPX)
 
 **Configuration:**
-- Deploy FctTokenFactory, SwapBox to mainnet (43114)
+- Deploy ACR (already deployed), FctFactory, SwapBox to mainnet (43114)
 - Testnet: Avalanche Fuji (43113)
-- Grant `CONFIGURATOR_ROLE` to ACX backend signers
+- Grant `OWNER` role to Safe multisig treasury
 - Integrate indexer for event tracking
 
 ---
@@ -690,20 +723,16 @@ async function validateAccess(walletAddress: string, ipAddress: string) {
 
 ### 25.1 Avalanche C-Chain (DPX)
 
-| Operation | Gas Used | Cost @ 50 nAVAX |
+| Operation | Gas Used | Cost @ 25 nAVAX |
 |-----------|----------|-----------------|
-| Configure Swap | 120,000 | $0.18 |
-| Buyer Deposit USDC | 80,000 | $0.12 |
-| Seller Deposit FCT | 80,000 | $0.12 |
-| Total per Swap | 280,000 | **$0.42** |
-
+| Atomic Swap (SwapBox.swap) | ~50,000 | **$0.15** |
 *Assumes AVAX = $30*
 
 ### 25.2 Network Comparison
 
 | Network | Cost | Finality | Throughput |
 |---------|------|----------|------------|
-| **Avalanche** | **$0.42** | **<2 sec** | **4,500 TPS** |
+| **Avalanche** | **$0.15** | **<2 sec** | **4,500 TPS** |
 | Polygon | $0.10 | ~30 sec | ~7,000 TPS |
 | Arbitrum | $2.00 | ~15 min | ~40,000 TPS |
 | Ethereum | $50+ | ~12 min | ~15 TPS |
@@ -853,55 +882,7 @@ async function validateAccess(walletAddress: string, ipAddress: string) {
 
 ## 27. SwapBox Contract (Complete Implementation)
 
-**Full Solidity code available in `src/SwapBox-Contract.md`**
-
-### 27.1 Contract Overview
-
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
-
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-
-contract SwapBox is AccessControl, ReentrancyGuard, Pausable {
-    using SafeERC20 for IERC20;
-
-    bytes32 public constant CONFIGURATOR_ROLE = keccak256("CONFIGURATOR_ROLE");
-    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-
-    enum SwapStatus { 
-        None, Pending, BuyerDeposited, SellerDeposited, 
-        ReadyToSettle, Completed, Cancelled 
-    }
-
-    struct Swap {
-        uint256 swapId;
-        address buyer;
-        address seller;
-        address buyerAsset;
-        uint256 buyerAmount;
-        address sellerAsset;
-        uint256 sellerAmount;
-        SwapStatus status;
-        uint256 expiryTimestamp;
-        bool buyerDeposited;
-        bool sellerDeposited;
-        bool buyerWithdrew;
-        bool sellerWithdrew;
-        uint256 createdAt;
-    }
-
-    mapping(uint256 => Swap) public swaps;
-    uint256 private _swapCounter;
-
-    // Events, functions omitted for brevity
-    // See src/SwapBox-Contract.md for complete implementation
-}
-```
+**Full Solidity code available in [AirSwap Github](https://github.com/airswap/airswap-protocols/blob/develop/source/swap-erc20/contracts/SwapERC20.sol)**
 
 ### 27.2 Key Functions
 
