@@ -175,133 +175,6 @@ source .env
 forge script script/DeploySwapERC20.s.sol --rpc-url anvil --broadcast
 ```
 
-## Updating Configuration
-
-After deployment, you can update parameters (owner only):
-
-```bash
-# Update protocol fee
-cast send $SWAP_ADDRESS \
-  "setProtocolFee(uint256)" \
-  50 \
-  --rpc-url fuji \
-  --private-key $PRIVATE_KEY
-
-# Update fee wallet
-cast send $SWAP_ADDRESS \
-  "setProtocolFeeWallet(address)" \
-  0xNewFeeWallet \
-  --rpc-url fuji \
-  --private-key $PRIVATE_KEY
-
-# Update staking contract (for bonus calculations)
-cast send $SWAP_ADDRESS \
-  "setStaking(address)" \
-  0xStakingContract \
-  --rpc-url fuji \
-  --private-key $PRIVATE_KEY
-```
-
-## Testing
-
-### Fork Testing
-
-Test your deployed SwapERC20 instance using Foundry's fork testing:
-
-```bash
-# Set your deployed contract address
-export SWAP_ADDRESS=0xYourDeployedSwapAddress
-
-# Fork Fuji testnet (where your contract is deployed)
-forge test --fork-url $FUJI_RPC_URL --match-test testSwap -vvv
-
-# Fork Avalanche mainnet (for production testing)
-forge test --fork-url $AVALANCHE_RPC_URL --match-test testSwap -vvv
-```
-
-### Manual Testing with Cast
-
-```bash
-# Check deployment
-cast call $SWAP_ADDRESS "owner()" --rpc-url $FUJI_RPC_URL
-
-# Calculate fees
-cast call $SWAP_ADDRESS \
-  "calculateProtocolFee(address,uint256)" \
-  0xUserAddress \
-  1000000000000000000000 \
-  --rpc-url $FUJI_RPC_URL | cast --to-dec
-
-# Check nonce usage
-cast call $SWAP_ADDRESS \
-  "nonceUsed(address,uint256)" \
-  0xSignerAddress \
-  1 \
-  --rpc-url $FUJI_RPC_URL
-```
-
-## Key SwapERC20 Features
-
-### Three Swap Methods
-
-1. **`swap()`** - Standard swap with known sender
-2. **`swapAnySender()`** - Swap where sender can be anyone
-3. **`swapLight()`** - Gas-optimized swap (recipient is msg.sender)
-
-### Protocol Fees
-
-- Configurable protocol fee (default: 30 basis points = 0.3%)
-- Lower fees for stakers via `bonusScale` and `bonusMax`
-- Check fee before swapping: `calculateProtocolFee(wallet, amount)`
-
-### Nonce Management
-
-- Each order has a unique nonce to prevent replay attacks
-- Nonces are bit-packed in groups of 256 for gas efficiency
-- Check if used: `nonceUsed(wallet, nonce)`
-
-### Order Validation
-
-Before executing a swap, validate the order using `check()`:
-
-```bash
-# Via cast
-cast call $SWAP_ADDRESS \
-  "check(address,uint256,uint256,address,address,uint256,address,uint256,uint8,bytes32,bytes32)" \
-  $SENDER_WALLET \
-  $NONCE \
-  $EXPIRY \
-  $SIGNER_WALLET \
-  $SIGNER_TOKEN \
-  $SIGNER_AMOUNT \
-  $SENDER_TOKEN \
-  $SENDER_AMOUNT \
-  $V \
-  $R \
-  $S \
-  --rpc-url $FUJI_RPC_URL
-```
-
-Or in Solidity tests:
-
-```solidity
-bytes32[] memory errors = swap.check(
-    senderWallet,
-    nonce,
-    expiry,
-    signerWallet,
-    signerToken,
-    signerAmount,
-    senderToken,
-    senderAmount,
-    v,
-    r,
-    s
-);
-
-require(errors.length == 0, "Invalid order");
-```
-
 ## Interacting with Deployed Contract
 
 Use Foundry's `cast` tool to interact with your deployed SwapERC20.
@@ -344,6 +217,15 @@ cast call $SWAP_ADDRESS \
 
 ```bash
 # Set protocol fee (basis points)
+# With mnemonic:
+cast send $SWAP_ADDRESS \
+  "setProtocolFee(uint256)" \
+  50 \
+  --rpc-url $FUJI_RPC_URL \
+  --mnemonic "$MNEMONIC" \
+  --mnemonic-index 0
+
+# OR with PRIVATE_KEY:
 cast send $SWAP_ADDRESS \
   "setProtocolFee(uint256)" \
   50 \
@@ -355,29 +237,35 @@ cast send $SWAP_ADDRESS \
   "setProtocolFeeLight(uint256)" \
   10 \
   --rpc-url $FUJI_RPC_URL \
-  --private-key $PRIVATE_KEY
+  --mnemonic "$MNEMONIC" \
+  --mnemonic-index 0
 
 # Update fee wallet
 cast send $SWAP_ADDRESS \
   "setProtocolFeeWallet(address)" \
   0xNewFeeWallet \
   --rpc-url $FUJI_RPC_URL \
-  --private-key $PRIVATE_KEY
+  --mnemonic "$MNEMONIC" \
+  --mnemonic-index 0
 
 # Set staking contract
 cast send $SWAP_ADDRESS \
   "setStaking(address)" \
   0xStakingContract \
   --rpc-url $FUJI_RPC_URL \
-  --private-key $PRIVATE_KEY
+  --mnemonic "$MNEMONIC" \
+  --mnemonic-index 0
 
 # Transfer ownership
 cast send $SWAP_ADDRESS \
   "transferOwnership(address)" \
   0xNewOwner \
   --rpc-url $FUJI_RPC_URL \
-  --private-key $PRIVATE_KEY
+  --mnemonic "$MNEMONIC" \
+  --mnemonic-index 0
 ```
+
+**Note:** Replace `--private-key $PRIVATE_KEY` with `--mnemonic "$MNEMONIC" --mnemonic-index 0` (or other index) for any command above.
 
 ### User Functions
 
@@ -387,21 +275,26 @@ cast send $SWAP_ADDRESS \
   "authorize(address)" \
   0xAuthorizedSigner \
   --rpc-url $FUJI_RPC_URL \
-  --private-key $PRIVATE_KEY
+  --mnemonic "$MNEMONIC" \
+  --mnemonic-index 0
 
 # Revoke authorization
 cast send $SWAP_ADDRESS \
   "revoke()" \
   --rpc-url $FUJI_RPC_URL \
-  --private-key $PRIVATE_KEY
+  --mnemonic "$MNEMONIC" \
+  --mnemonic-index 0
 
 # Cancel nonces
 cast send $SWAP_ADDRESS \
   "cancel(uint256[])" \
   "[123,124,125]" \
   --rpc-url $FUJI_RPC_URL \
-  --private-key $PRIVATE_KEY
+  --mnemonic "$MNEMONIC" \
+  --mnemonic-index 0
 ```
+
+**Note:** Replace `--private-key $PRIVATE_KEY` with `--mnemonic "$MNEMONIC" --mnemonic-index 0` (or other index) for any command above.
 
 ## Updating Dependencies (If Needed)
 
