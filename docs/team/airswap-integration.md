@@ -65,6 +65,7 @@ This extension enables full contract administration and monitoring without needi
 
 Deploy your own SwapERC20 instance to collect protocol fees from token swaps on your platform.
 
+
 ### Prerequisites
 
 1. Configure environment variables in `.env`:
@@ -84,18 +85,19 @@ SNOWTRACE_API_KEY=your_snowtrace_api_key
 SNOWTRACE_FUJI_API_KEY=your_snowtrace_fuji_api_key
 ETHERSCAN_API_KEY=your_etherscan_api_key
 
-# Deployment parameters
-PROTOCOL_FEE_WALLET=0xYourFeeRecipientAddress
+# SwapERC20 deployment parameters
+PROTOCOL_FEE=30
+PROTOCOL_FEE_LIGHT=7
+PROTOCOL_FEE_WALLET=0xfeeWalletAddress
+BONUS_SCALE=4
+BONUS_MAX=50
 ```
 
-2. Source the environment file:
-```bash
-source .env
-```
+**Authentication Notes:**
+- **PRIVATE_KEY** (recommended): Script auto-reads from `.env`, no CLI flags needed
+- **MNEMONIC**: Requires `--mnemonics "$MNEMONIC"` CLI flag (Foundry doesn't auto-read from `.env`)
 
-### Deployment Parameters
-
-SwapERC20 requires these parameters at deployment. Customize them via environment variables:
+SwapERC20 requires these constructor parameters at deployment:
 
 | Parameter | Environment Variable | Default | Description | Max Value |
 |-----------|---------------------|---------|-------------|-----------|
@@ -105,100 +107,71 @@ SwapERC20 requires these parameters at deployment. Customize them via environmen
 | `bonusScale` | `BONUS_SCALE` | 4 | Staking bonus scale factor | 77 |
 | `bonusMax` | `BONUS_MAX` | 50 | Maximum bonus percentage (50%) | 100 |
 
-### Deployment Method: Foundry
 
-Deploy SwapERC20 directly from this project using Foundry. The deployment script handles Solidity version differences automatically.
+2. Source the environment file:
+```bash
+source .env
+```
 
-**Deployment script location**: `script/DeploySwapERC20.s.sol`
+### Deployment Options
 
-### Deploy to Local Network (Anvil)
+The deployment script (`script/DeploySwapERC20.s.sol`) reads all constructor parameters from your `.env` file, keeping commands clean and simple.
 
+**Choose your deployment method:**
+
+| Use Case | Command |
+|----------|---------|
+| **With PRIVATE_KEY from .env** | `forge script script/DeploySwapERC20.s.sol --rpc-url <network> --broadcast` |
+| **With explicit private key** | `forge script script/DeploySwapERC20.s.sol --rpc-url <network> --broadcast --private-key $PRIVATE_KEY` |
+| **With mnemonic** | `forge script script/DeploySwapERC20.s.sol --rpc-url <network> --broadcast --mnemonics "$MNEMONIC"` |
+| **With verification** | Add `--verify` flag to any command above |
+| **Local testing (Anvil)** | `forge script script/DeploySwapERC20.s.sol --rpc-url anvil --broadcast` |
+
+### Network Deployment Examples
+
+All constructor parameters are read from `.env`. Choose authentication method based on what you have configured.
+
+**Avalanche Fuji Testnet:**
+```bash
+source .env
+# Using PRIVATE_KEY from .env (recommended)
+forge script script/DeploySwapERC20.s.sol --rpc-url fuji --broadcast --verify
+
+# OR using MNEMONIC from .env
+forge script script/DeploySwapERC20.s.sol --rpc-url fuji --broadcast --verify --mnemonics "$MNEMONIC"
+```
+
+**Ethereum Sepolia Testnet:**
+```bash
+source .env
+# Using PRIVATE_KEY from .env (recommended)
+forge script script/DeploySwapERC20.s.sol --rpc-url sepolia --broadcast --verify
+
+# OR using MNEMONIC from .env
+forge script script/DeploySwapERC20.s.sol --rpc-url sepolia --broadcast --verify --mnemonics "$MNEMONIC"
+```
+
+**Avalanche Mainnet:**
+```bash
+source .env
+# Using PRIVATE_KEY from .env (recommended)
+forge script script/DeploySwapERC20.s.sol --rpc-url avalanche --broadcast --verify
+
+# OR using MNEMONIC from .env
+forge script script/DeploySwapERC20.s.sol --rpc-url avalanche --broadcast --verify --mnemonics "$MNEMONIC"
+```
+
+**Local Anvil (testing):**
 ```bash
 # Terminal 1: Start Anvil
 anvil
 
-# Terminal 2: Deploy
+# Terminal 2: Deploy (PRIVATE_KEY not required for local)
 source .env
 forge script script/DeploySwapERC20.s.sol --rpc-url anvil --broadcast
 ```
 
-### Deploy to Fuji Testnet
-
-**With default parameters (30 bps fee, 7 bps light fee):**
-```bash
-source .env
-forge script script/DeploySwapERC20.s.sol --rpc-url fuji --broadcast --verify
-```
-
-**With custom parameters:**
-```bash
-source .env
-PROTOCOL_FEE=50 PROTOCOL_FEE_LIGHT=10 forge script script/DeploySwapERC20.s.sol --rpc-url fuji --broadcast --verify
-```
-
-**Using private key directly:**
-```bash
-source .env
-forge script script/DeploySwapERC20.s.sol --rpc-url fuji --broadcast --verify --private-key $PRIVATE_KEY
-```
-
-### Deploy to Sepolia Testnet
-
-```bash
-source .env
-forge script script/DeploySwapERC20.s.sol --rpc-url sepolia --broadcast --verify
-```
-
-### Deploy to Avalanche Mainnet
-
-```bash
-source .env
-forge script script/DeploySwapERC20.s.sol --rpc-url avalanche --broadcast --verify
-```
-
-### Alternative: Hardhat Deployment
-
-If you prefer to use AirSwap's original Hardhat setup, you can deploy from a separate directory:
-
-```bash
-# Create separate directory
-mkdir airswap-deploy && cd airswap-deploy
-
-# Clone and setup
-git clone https://github.com/airswap/airswap-protocols.git
-cd airswap-protocols && git checkout v5.0.0
-cd source/swap-erc20 && npm install
-
-# Configure hardhat.config.js with your network settings
-# Create deployment script (see AirSwap docs)
-# Deploy
-npx hardhat run scripts/deploy-custom.js --network fuji
-```
-
-This approach is more complex but uses AirSwap's official tooling. For most use cases, the Foundry deployment above is recommended.
-
-### Troubleshooting
-
-**Error: "No solc version exists that matches the version requirement: =0.8.23"**
-
-If you encounter this error when building or deploying, Foundry needs to download Solidity 0.8.23. This should happen automatically, but if it doesn't:
-
-1. Ensure `offline = false` is set in `foundry.toml` (already configured)
-2. Try running with explicit offline mode disabled:
-   ```bash
-   FOUNDRY_OFFLINE=false forge build --force
-   ```
-
-3. If the issue persists, you can deploy without building all contracts:
-   ```bash
-   forge script script/DeploySwapERC20.s.sol --rpc-url fuji --broadcast --verify --skip-simulation
-   ```
-
-4. Alternatively, use the Hardhat deployment method described above
-
-The deployment script will work correctly once Solidity 0.8.23 is available in your Foundry installation.
-
-### Updating Configuration
+## Updating Configuration
 
 After deployment, you can update parameters (owner only):
 
