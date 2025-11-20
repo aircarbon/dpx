@@ -123,7 +123,8 @@ The deployment script (`script/DeploySwapERC20.s.sol`) reads all constructor par
 |----------|---------|
 | **With PRIVATE_KEY from .env** | `forge script script/DeploySwapERC20.s.sol --rpc-url <network> --broadcast` |
 | **With explicit private key** | `forge script script/DeploySwapERC20.s.sol --rpc-url <network> --broadcast --private-key $PRIVATE_KEY` |
-| **With mnemonic** | `forge script script/DeploySwapERC20.s.sol --rpc-url <network> --broadcast --mnemonics "$MNEMONIC"` |
+| **With mnemonic (account 0)** | `forge script script/DeploySwapERC20.s.sol --rpc-url <network> --broadcast --mnemonics "$MNEMONIC"` |
+| **With mnemonic (custom index)** | `forge script script/DeploySwapERC20.s.sol --rpc-url <network> --broadcast --mnemonics "$MNEMONIC" --mnemonic-indexes 1` |
 | **With verification** | Add `--verify` flag to any command above |
 | **Local testing (Anvil)** | `forge script script/DeploySwapERC20.s.sol --rpc-url anvil --broadcast` |
 
@@ -147,8 +148,11 @@ source .env
 # Using PRIVATE_KEY from .env (recommended)
 forge script script/DeploySwapERC20.s.sol --rpc-url sepolia --broadcast --verify
 
-# OR using MNEMONIC from .env
+# OR using MNEMONIC from .env (account index 0, default)
 forge script script/DeploySwapERC20.s.sol --rpc-url sepolia --broadcast --verify --mnemonics "$MNEMONIC"
+
+# OR using MNEMONIC with custom account index (e.g., index 1)
+forge script script/DeploySwapERC20.s.sol --rpc-url sepolia --broadcast --verify --mnemonics "$MNEMONIC" --mnemonic-indexes 1
 ```
 
 **Avalanche Mainnet:**
