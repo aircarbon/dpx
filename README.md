@@ -1,9 +1,10 @@
 # DPX Project - Smart Contracts Repository
 
-This repository contains smart contracts for two main systems:
+This repository contains smart contracts for three main systems:
 
 1. **ACR Governance Token & DAO** - An upgradeable ERC-20 governance token with on-chain voting capabilities
 2. **DPX Platform** - A decentralized platform for tokenizing future carbon credits
+3. **SwapBox** - Atomic, non-custodial ERC20 token swaps powered by AirSwap's SwapERC20 protocol
 
 ## Production Deployments
 
@@ -19,6 +20,9 @@ This repository contains smart contracts for two main systems:
 The token is controlled by a multisig Treasury Safe wallet, which currently holds the entire supply of 1 billion tokens.
 
 ### DPX Project
+Not deployed for now.
+
+### SwapBox
 Not deployed for now.
 
 ## Project Overview
