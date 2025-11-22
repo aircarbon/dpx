@@ -44,10 +44,10 @@ contract CreateSwapSignature is Script {
     // ==============================================================================
 
     // Network configuration
-    uint256 private constant CHAIN_ID = 11155111;  // Sepolia
+    uint256 private constant CHAIN_ID = 11155111;  // Sepolia - 11155111, Fuji - 43113, Avalanche - 43114
     uint256 private constant MNEMONIC_INDEX = 1;  // Which account from mnemonic
 
-    // SwapERC20 contract address - REPLACE WITH YOUR DEPLOYED CONTRACT
+    // SwapERC20 contract address - REPLACE WITH YOUR DEPLOYED SwapERC20 CONTRACT ADDRESS
     address private constant SWAP_CONTRACT = 0xC376d2eD499B835E92b025067Ce96bF0FAAba71e;
 
     // Order parameters
@@ -56,15 +56,15 @@ contract CreateSwapSignature is Script {
 
     // Signer (the one creating and signing the order)
     address private constant SIGNER_WALLET = 0x5Cd5F76686B86CB66494FeA4040b9Dea83129F81;  // Signer account
-    address private constant SIGNER_TOKEN = 0xa0d34260E7fD4a84e15cD9BC2E1C51AbBA51A498;   // Example token A
-    uint256 private constant SIGNER_AMOUNT = 20 ether;  // 1 token (18 decimals)
+    address private constant SIGNER_TOKEN = 0xa0d34260E7fD4a84e15cD9BC2E1C51AbBA51A498;   // Token address that signer will send
+    uint256 private constant SIGNER_AMOUNT = 20 ether;  // (ether means 18 decimals)
 
     // Protocol fee is fetched from the deployed contract (not hardcoded)
 
     // Sender (the one who will execute the swap)
-    address private constant SENDER_WALLET = 0x0000000000000000000000000000000000000000;  // Sender account
-    address private constant SENDER_TOKEN = 0x817AF3CEa0921CF33ACF0CA6456012a92b4c9261;   // Example token B
-    uint256 private constant SENDER_AMOUNT = 70 ether;  // 2 tokens (18 decimals)
+    address private constant SENDER_WALLET = 0x0000000000000000000000000000000000000000;  // Sender account (if zero address, any wallet can execute the swap)
+    address private constant SENDER_TOKEN = 0x817AF3CEa0921CF33ACF0CA6456012a92b4c9261;   // Token address that sender will send
+    uint256 private constant SENDER_AMOUNT = 70 ether;  // (ether means 18 decimals)
 
     // ==============================================================================
     // MAIN SCRIPT
@@ -101,6 +101,7 @@ contract CreateSwapSignature is Script {
             console.log("         Expected:", SIGNER_WALLET);
             console.log("         Got:     ", derivedAddress);
             console.log("         Update SIGNER_WALLET constant or use different mnemonic index");
+            revert("ERROR: Derived address does not match SIGNER_WALLET!");
         }
         console.log("");
 
@@ -206,6 +207,8 @@ contract CreateSwapSignature is Script {
         console.log("  Sender Wallet:   ", SENDER_WALLET);
         console.log("  Sender Token:    ", SENDER_TOKEN);
         console.log("  Sender Amount:   ", SENDER_AMOUNT);
+        console.log("");
+        console.log("");
         console.log("");
     }
 
