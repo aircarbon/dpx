@@ -95,7 +95,7 @@ contract FctFactoryTest is Test {
     function test_Initialization() public view {
         assertEq(factory.owner(), owner);
         assertEq(factory.getProjectCount(), 0);
-        assertEq(factory.getNextProjectId(), 0);
+        assertEq(factory.getNextProjectId(), 1);
     }
 
     function test_CannotInitializeTwice() public {
@@ -122,19 +122,19 @@ contract FctFactoryTest is Test {
 
     function test_CreateProject() public {
         vm.expectEmit(false, false, false, false);
-        emit ProjectCreated(0, address(0), PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE);
+        emit ProjectCreated(1, address(0), PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE);
 
         (uint256 projectId, address tokenAddress) = factory.createProject(
             PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
 
-        assertEq(projectId, 0);
+        assertEq(projectId, 1);
         assertEq(factory.getProjectCount(), 1);
-        assertEq(factory.getNextProjectId(), 1);
+        assertEq(factory.getNextProjectId(), 2);
         assertTrue(tokenAddress != address(0));
 
-        FctFactory.Project memory project = factory.getProject(0);
-        assertEq(project.projectId, 0);
+        FctFactory.Project memory project = factory.getProject(1);
+        assertEq(project.projectId, 1);
         assertEq(project.name, PROJECT_NAME);
         assertEq(project.symbol, PROJECT_SYMBOL);
         assertEq(project.initialSupply, INITIAL_SUPPLY);
@@ -195,14 +195,14 @@ contract FctFactoryTest is Test {
             "Project 3", "PRJ3", 3000 * 10 ** 18, 2026, "ACR-3000", emptyMetadata()
         );
 
-        assertEq(projectId1, 0);
-        assertEq(projectId2, 1);
-        assertEq(projectId3, 2);
+        assertEq(projectId1, 1);
+        assertEq(projectId2, 2);
+        assertEq(projectId3, 3);
         assertEq(factory.getProjectCount(), 3);
         assertTrue(tokenAddress1 != tokenAddress2);
         assertTrue(tokenAddress2 != tokenAddress3);
 
-        FctFactory.Project memory project2 = factory.getProject(1);
+        FctFactory.Project memory project2 = factory.getProject(2);
         assertEq(project2.name, "Project 2");
         assertEq(project2.vintageYear, 2025);
         assertEq(project2.projectRegistryCode, "GS-2000");
@@ -413,21 +413,23 @@ contract FctFactoryTest is Test {
 
     function test_ProjectIdExists() public {
         assertFalse(factory.projectIdExists(0));
+        assertFalse(factory.projectIdExists(1));
 
         factory.createProject(PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata());
 
-        assertTrue(factory.projectIdExists(0));
-        assertFalse(factory.projectIdExists(1));
+        assertFalse(factory.projectIdExists(0)); // 0 is never used
+        assertTrue(factory.projectIdExists(1));
+        assertFalse(factory.projectIdExists(2));
     }
 
     function test_GetNextProjectId() public {
-        assertEq(factory.getNextProjectId(), 0);
-
-        factory.createProject("P1", "P1", 1000 * 10 ** 18, 2024, "V1", emptyMetadata());
         assertEq(factory.getNextProjectId(), 1);
 
-        factory.createProject("P2", "P2", 2000 * 10 ** 18, 2025, "V2", emptyMetadata());
+        factory.createProject("P1", "P1", 1000 * 10 ** 18, 2024, "V1", emptyMetadata());
         assertEq(factory.getNextProjectId(), 2);
+
+        factory.createProject("P2", "P2", 2000 * 10 ** 18, 2025, "V2", emptyMetadata());
+        assertEq(factory.getNextProjectId(), 3);
     }
 
     // ========== Upgrade Tests ==========
@@ -461,7 +463,7 @@ contract FctFactoryTest is Test {
 
         // Verify factory still works
         (uint256 newProjectId,) = factory.createProject("New Project", "NEW", 5000 * 10 ** 18, 2027, "NEW-1", emptyMetadata());
-        assertEq(newProjectId, 1);
+        assertEq(newProjectId, 2);
     }
 
     function test_RevertUpgradeNotOwner() public {

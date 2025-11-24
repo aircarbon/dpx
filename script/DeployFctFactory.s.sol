@@ -10,21 +10,24 @@ import {console} from "forge-std/console.sol";
  * @title DeployFctFactoryScript
  * @dev Deployment script for DPX Platform (FctFactory) using UUPS proxy pattern
  *
- * Configuration:
+ * Configuration Environment Variables:
+ * - PRIVATE_KEY: Private key for deployment (takes priority)
+ * - MNEMONIC: Mnemonic phrase for deployment (used if PRIVATE_KEY not set)
+ * - MNEMONIC_INDEX: Index for mnemonic derivation (default: 0)
  * - OWNER_ADDRESS: Address of the owner (company multisig wallet)
  *   - If not provided, deployer becomes the owner
  *
  * Usage with private key:
- *   source .env && forge script script/DeployFctFactory.s.sol --rpc-url sepolia --broadcast --private-key $PRIVATE_KEY
+ *   source .env && forge script script/DeployFctFactory.s.sol --rpc-url sepolia --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY
  *
- * Usage with mnemonic (derive private key first):
- *   source .env && DERIVED_KEY=$(cast wallet private-key "$MNEMONIC" --mnemonic-index 0) && \
- *   forge script script/DeployFctFactory.s.sol --rpc-url sepolia --broadcast --private-key $DERIVED_KEY
+ * Usage with mnemonic (default index 0):
+ *   source .env && forge script script/DeployFctFactory.s.sol --rpc-url sepolia --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY
+ *
+ * Usage with mnemonic (specific index):
+ *   source .env && MNEMONIC_INDEX=1 forge script script/DeployFctFactory.s.sol --rpc-url sepolia --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY
  *
  * Usage with custom owner (recommended for production):
- *   source .env && OWNER_ADDRESS=0x... forge script script/DeployFctFactory.s.sol --rpc-url sepolia --broadcast --private-key $PRIVATE_KEY
- *
- * Note: Add --verify --etherscan-api-key $ETHERSCAN_API_KEY if you want to verify on Etherscan
+ *   source .env && OWNER_ADDRESS=0x... forge script script/DeployFctFactory.s.sol --rpc-url sepolia --broadcast --verify --etherscan-api-key $ETHERSCAN_API_KEY
  *
  * IMPORTANT: Save the proxy address - this is the address users will interact with!
  * The implementation address can change during upgrades, but the proxy address stays the same.
@@ -36,31 +39,40 @@ import {console} from "forge-std/console.sol";
  */
 contract DeployFctFactoryScript is Script {
     function run() public {
-        // Calculate Foundry's default sender address (should NOT be used as owner)
-        // Same calculation as in forge-std: address(uint160(uint256(keccak256("foundry default caller"))))
-        address FOUNDRY_DEFAULT_SENDER = address(uint160(uint256(keccak256("foundry default caller"))));
+        // Get deployer address from private key or mnemonic
+        address deployerAddress;
+        uint256 deployerPrivateKey;
 
-        // Start broadcast - Foundry will use whatever was passed via CLI:
-        // - --private-key flag
-        // - --mnemonics flag
-        // - --account flag
-        // - or default to the foundry default sender if nothing was provided
-        vm.startBroadcast();
+        try vm.envUint("PRIVATE_KEY") returns (uint256 pk) {
+            // Using private key - derive address and start broadcast
+            deployerPrivateKey = pk;
+            deployerAddress = vm.addr(pk);
+            vm.startBroadcast(deployerPrivateKey);
+        } catch {
+            // Using mnemonic from CLI - derive address from mnemonic
+            try vm.envString("MNEMONIC") returns (string memory mnemonic) {
+                // Get mnemonic index (default to 0)
+                uint32 mnemonicIndex = uint32(vm.envOr("MNEMONIC_INDEX", uint256(0)));
+                deployerPrivateKey = vm.deriveKey(mnemonic, mnemonicIndex);
+                deployerAddress = vm.addr(deployerPrivateKey);
+                vm.startBroadcast(deployerPrivateKey);
+            } catch {
+                // No env variables, use default broadcast (for testing)
+                vm.startBroadcast();
+                deployerAddress = msg.sender;
+            }
+        }
 
-        // Get deployer address - Foundry already knows this from CLI args
-        address deployerAddress = msg.sender;
-
-        // Validate we're not using the Foundry default sender
-        require(
-            deployerAddress != FOUNDRY_DEFAULT_SENDER,
-            "ERROR: Using Foundry default sender! Please provide --private-key, --mnemonics, or --account"
-        );
+        // Step 1: Deploy the FctFactory implementation contract
+        console.log("Step 1: Deploying FctFactory implementation...");
+        FctFactory implementation = new FctFactory();
+        console.log("Implementation deployed at:", address(implementation));
 
         // Get owner address from environment, otherwise use deployer
         address ownerAddress;
         try vm.envAddress("OWNER_ADDRESS") returns (address addr) {
-            // Don't use OWNER_ADDRESS if it's set to the Foundry default or zero
-            if (addr != FOUNDRY_DEFAULT_SENDER && addr != address(0)) {
+            // Don't use OWNER_ADDRESS if it's set to zero
+            if (addr != address(0)) {
                 ownerAddress = addr;
                 console.log("Using OWNER_ADDRESS from env:", ownerAddress);
             } else {
@@ -73,16 +85,11 @@ contract DeployFctFactoryScript is Script {
             console.log("OWNER_ADDRESS not set, using deployer address");
         }
 
-        console.log("\n=== Starting DPX Platform Deployment ===");
+        console.log("\n=== DPX Platform Deployment ===");
         console.log("Network:", block.chainid);
-        console.log("Deployer:", msg.sender);
+        console.log("Deployer:", deployerAddress);
         console.log("Owner:", ownerAddress);
         console.log("========================================\n");
-
-        // Step 1: Deploy the FctFactory implementation contract
-        console.log("Step 1: Deploying FctFactory implementation...");
-        FctFactory implementation = new FctFactory();
-        console.log("Implementation deployed at:", address(implementation));
 
         // Step 2: Encode the initializer function call
         console.log("\nStep 2: Encoding initializer data...");
