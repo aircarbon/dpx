@@ -109,6 +109,9 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
+
+        // Start project IDs at 1 to use 0 as sentinel value for "not found"
+        projectIdCounter = 1;
     }
 
     // ============ Owner Functions ============
@@ -250,11 +253,13 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
      * Consider using pagination in production or querying off-chain via events.
      */
     function getAllProjects() external view returns (Project[] memory allProjects) {
-        uint256 count = projectIdCounter;
+        // Calculate actual count (projectIdCounter starts at 1, so count is projectIdCounter - 1)
+        uint256 count = projectIdCounter > 0 ? projectIdCounter - 1 : 0;
         allProjects = new Project[](count);
 
+        // Start from index 1 since project IDs start at 1 (0 is unused)
         for (uint256 i = 0; i < count; i++) {
-            allProjects[i] = projects[i];
+            allProjects[i] = projects[i + 1];
         }
 
         return allProjects;
@@ -313,7 +318,8 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
      * @return count Total number of projects
      */
     function getProjectCount() external view returns (uint256 count) {
-        return projectIdCounter;
+        // Since projectIdCounter starts at 1, actual count is projectIdCounter - 1
+        return projectIdCounter > 0 ? projectIdCounter - 1 : 0;
     }
 
     /**
@@ -322,7 +328,8 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
      * @return exists True if project exists
      */
     function projectIdExists(uint256 projectId) external view returns (bool exists) {
-        return projectId < projectIdCounter;
+        // Project IDs start at 1, so 0 is always invalid
+        return projectId > 0 && projectId < projectIdCounter;
     }
 
     /**
