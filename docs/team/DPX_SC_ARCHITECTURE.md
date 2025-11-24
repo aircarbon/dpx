@@ -18,13 +18,12 @@ The DPX (Decentralized Project Exchange) system enables tokenization of future c
 
 ### How It Works
 
-1. **Project Proposal**: Developer proposes a carbon credit project with name, symbol, supply, and metadata
-2. **Approval**: Platform owner reviews and approves the project
-3. **Token Deployment**: Upon approval, a FutureCarbonToken contract is automatically deployed
-4. **Token Trading**: Investors purchase tokens representing future carbon credits
-5. **Project Completion**: Carbon credits are issued and sold for USDT
-6. **Vault Deployment**: Owner deploys a RedemptionVault for the project
-7. **Redemption**: USDT is deposited, vault is activated, and token holders redeem for pro-rata USDT
+1. **Project Creation**: Platform owner creates a carbon credit project with name, symbol, supply, vintage year, registry code, and metadata
+2. **Token Deployment**: A FutureCarbonToken contract (extended ERC-20 token) is automatically deployed with the project details
+3. **Token Trading**: Investors trade standard ERC-20 compatible tokens on any platform, including our [SwapBox](SWAPBOX_OVERVIEW.md) for peer-to-peer atomic swaps
+4. **Carbon Credit Delivery**: Real carbon credits are delivered off-chain, sold for proceeds (typically USDT)
+5. **Vault Deployment & Funding**: Owner brings sale proceeds on-chain, deploys RedemptionVault, and funds it with USDT
+6. **Redemption**: Vault is activated and token holders redeem their tokens for pro-rata USDT distribution
 
 ## Architecture Components
 
@@ -35,11 +34,11 @@ The DPX (Decentralized Project Exchange) system enables tokenization of future c
 **Upgradeability**: UUPS proxy pattern - Implementation can be upgraded to add new features
 
 **Key Responsibilities**:
-- Accept project proposals from developers
-- Deploy `FutureCarbonToken` contracts when projects are approved
+- Create new projects (owner-only)
+- Deploy `FutureCarbonToken` contracts with project metadata (vintage year, registry code, custom metadata)
 - Deploy corresponding `RedemptionVault` contracts (separately, when needed)
-- Maintain registry mapping: `token address -> vault address`
-- Track project lifecycle status (Pending, Approved, Denied, Completed)
+- Maintain registry mappings: `token address -> project ID`, `project ID -> vault address`
+- Store immutable project information (name, symbol, supply, vintage year, registry code)
 - Provide discovery functions for querying all projects
 
 **Extends OpenZeppelin Contracts**:
@@ -48,10 +47,10 @@ The DPX (Decentralized Project Exchange) system enables tokenization of future c
 - `OwnableUpgradeable` - Access control
 
 **Custom Business Logic**:
-- Project proposal management (propose, approve, deny)
+- Project creation with immediate token deployment
 - Token and vault deployment
 - Project registry and discovery
-- Lifecycle status tracking
+- Reverse lookup mappings for tokens and vaults
 
 ---
 
@@ -68,6 +67,7 @@ The DPX (Decentralized Project Exchange) system enables tokenization of future c
 - Burnable (required for redemption process)
 - Pausable (emergency stop for transfers)
 - 18 decimals (standard ERC-20 precision)
+- Immutable project metadata: vintage year, registry code, custom key-value pairs
 
 **Extends OpenZeppelin Contracts**:
 - `ERC20` - Standard ERC-20 implementation
@@ -77,23 +77,24 @@ The DPX (Decentralized Project Exchange) system enables tokenization of future c
 - `Ownable` - Access control
 
 **Custom Business Logic**:
-- Minimal - primarily wraps OpenZeppelin functionality with access control
 - Custom `mint()` function (owner-only wrapper around `_mint`)
 - Custom `pause()`/`unpause()` functions (owner-only wrappers)
 - Required `_update()` override for multiple inheritance
+- Metadata storage and retrieval: `vintageYear`, `projectRegistryCode`, and custom metadata array
+- Getter functions: `getVintageYear()`, `getProjectRegistryCode()`, `getMetadataEntries()`, `getProjectMetadata()`
 
 ---
 
 ### 3. RedemptionVault (Non-Upgradeable)
 
-**Purpose**: Holds USDT proceeds from carbon credit sales and facilitates token redemption.
+**Purpose**: Holds proceeds from carbon credit sales (typically stablecoins like USDT or USDC) and facilitates token redemption.
 
 **Upgradeability**: Not upgradeable - Each vault is specific to one project with immutable redemption logic
 
 **Key Responsibilities**:
-- Store USDT from carbon credit sales
-- Calculate pro-rata redemption rate: `redemptionRatePerToken = totalUSDT / futureTokenTotalSupply`
-- Execute token-for-USDT swaps
+- Store proceeds from carbon credit sales (configurable token, typically stablecoins like USDT or USDC)
+- Calculate pro-rata redemption rate: `redemptionRatePerToken = totalProceeds / futureTokenTotalSupply`
+- Execute token-for-proceeds swaps
 - Burn redeemed FutureCarbonTokens (prevents double-redemption)
 - Track redemption statistics
 
@@ -259,8 +260,7 @@ forge test --match-contract RedemptionVault -vvv
 ```bash
 # FctFactory tests
 forge test --match-contract FctFactory --match-test test_Initialization -vv
-forge test --match-contract FctFactory --match-test test_ProposeProject -vv
-forge test --match-contract FctFactory --match-test test_ApproveProject -vv
+forge test --match-contract FctFactory --match-test test_CreateProject -vv
 forge test --match-contract FctFactory --match-test test_DeployVault -vv
 forge test --match-contract FctFactory --match-test test_Upgrade -vv
 
@@ -304,11 +304,10 @@ The test suite covers:
 
 **FctFactory**:
 - ✅ Initialization and ownership
-- ✅ Project proposals with validation
-- ✅ Project approval with automatic token deployment
-- ✅ Project denial
-- ✅ Vault deployment for approved projects
-- ✅ Query functions (getProject, getAllProjects, getProjectsByStatus)
+- ✅ Project creation with validation (owner-only)
+- ✅ Automatic token deployment with metadata
+- ✅ Vault deployment for projects
+- ✅ Query functions (getProject, getAllProjects, getTokenForProject, getVaultForToken)
 - ✅ Token-to-project and project-to-vault mappings
 - ✅ UUPS upgrades with state preservation
 - ✅ Access control (owner-only functions)
@@ -435,7 +434,7 @@ cast call $FACTORY_ADDRESS \
   0 \
   --rpc-url sepolia
 
-# Returns: (projectId, name, symbol, initialSupply, developer, tokenAddress, vaultAddress, status, proposedAt, processedAt, metadata)
+# Returns: (projectId, name, symbol, initialSupply, tokenAddress, vaultAddress, createdAt, vintageYear, projectRegistryCode)
 ```
 
 #### Get All Projects
@@ -444,15 +443,6 @@ cast call $FACTORY_ADDRESS \
 cast call $FACTORY_ADDRESS "getAllProjects()" --rpc-url sepolia
 ```
 
-#### Get Projects by Status
-
-```bash
-# Status values: 0 = Pending, 1 = Approved, 2 = Denied
-cast call $FACTORY_ADDRESS \
-  "getProjectsByStatus(uint8)" \
-  0 \
-  --rpc-url sepolia
-```
 
 #### Get Token for Project
 
@@ -474,44 +464,30 @@ cast call $FACTORY_ADDRESS \
 
 ### Project Management Functions
 
-#### Propose a Project (Any Developer)
+#### Create a Project (Owner Only)
 
 ```bash
+# Create project with metadata (requires constructing metadata array)
+# For simplicity, this example uses empty metadata
 cast send $FACTORY_ADDRESS \
-  "proposeProject(string,string,uint256,string)" \
+  "createProject(string,string,uint256,uint256,string,(string,string)[])" \
   "Future Carbon Credit - Alpha" \
   "FCC-ALPHA" \
   $(cast --to-wei 1000000) \
-  "ipfs://QmXYZ123" \
+  2025 \
+  "VCS-1234-2025" \
+  "[]" \
   --rpc-url sepolia \
   --private-key $PRIVATE_KEY
-```
 
-#### Approve Project (Owner Only)
-
-```bash
-# This automatically deploys the FutureCarbonToken
-cast send $FACTORY_ADDRESS \
-  "approveProject(uint256)" \
-  0 \
-  --rpc-url sepolia \
-  --private-key $PRIVATE_KEY
-```
-
-#### Deny Project (Owner Only)
-
-```bash
-cast send $FACTORY_ADDRESS \
-  "denyProject(uint256)" \
-  0 \
-  --rpc-url sepolia \
-  --private-key $PRIVATE_KEY
+# Note: This automatically deploys the FutureCarbonToken with the provided metadata
+# Returns: (projectId, tokenAddress)
 ```
 
 #### Deploy Vault (Owner Only)
 
 ```bash
-# Deploy RedemptionVault for an approved project
+# Deploy RedemptionVault for a project
 # Requires: USDT token address
 cast send $FACTORY_ADDRESS \
   "deployVault(uint256,address)" \
@@ -653,33 +629,18 @@ OWNER_ADDRESS=0xMultisigAddress \
 export FACTORY_ADDRESS=0xProxyAddress
 ```
 
-### 2. Developer Proposes Project
+### 2. Owner Creates Project
 
 ```bash
-# Developer proposes a carbon credit project
+# Owner creates a carbon credit project (automatically deploys token)
 cast send $FACTORY_ADDRESS \
-  "proposeProject(string,string,uint256,string)" \
+  "createProject(string,string,uint256,uint256,string,(string,string)[])" \
   "Rainforest Preservation 2025" \
   "RFP2025" \
   $(cast --to-wei 5000000) \
-  "ipfs://QmRainforestMetadata" \
-  --rpc-url sepolia \
-  --private-key $DEVELOPER_KEY
-
-# Check project status
-cast call $FACTORY_ADDRESS "getProject(uint256)" 0 --rpc-url sepolia
-```
-
-### 3. Owner Reviews and Approves
-
-```bash
-# Get pending projects
-cast call $FACTORY_ADDRESS "getProjectsByStatus(uint8)" 0 --rpc-url sepolia
-
-# Approve project (automatically deploys token)
-cast send $FACTORY_ADDRESS \
-  "approveProject(uint256)" \
-  0 \
+  2025 \
+  "VCS-RFP-2025" \
+  "[]" \
   --rpc-url sepolia \
   --private-key $OWNER_KEY
 
@@ -690,9 +651,12 @@ TOKEN_ADDRESS=$(cast call $FACTORY_ADDRESS \
   --rpc-url sepolia | xargs cast abi-decode "getTokenForProject(uint256)(address)")
 
 echo "Token deployed at: $TOKEN_ADDRESS"
+
+# Check project details
+cast call $FACTORY_ADDRESS "getProject(uint256)" 0 --rpc-url sepolia
 ```
 
-### 4. Token Trading Phase
+### 3. Token Trading Phase
 
 ```bash
 # Owner transfers tokens to investors
@@ -707,7 +671,7 @@ cast send $TOKEN_ADDRESS \
 # ...
 ```
 
-### 5. Project Completes & Vault Deployment
+### 4. Project Completes & Vault Deployment
 
 ```bash
 # Carbon credits sold, ready for redemption
@@ -728,7 +692,7 @@ VAULT_ADDRESS=$(cast call $FACTORY_ADDRESS \
 echo "Vault deployed at: $VAULT_ADDRESS"
 ```
 
-### 6. Deposit USDT and Activate Redemption
+### 5. Deposit USDT and Activate Redemption
 
 ```bash
 # Owner deposits USDT from carbon credit sales
@@ -749,7 +713,7 @@ cast send $VAULT_ADDRESS \
 cast call $VAULT_ADDRESS "getRedemptionRate()" --rpc-url sepolia | cast --to-dec
 ```
 
-### 7. Token Holders Redeem
+### 6. Token Holders Redeem
 
 ```bash
 # Investor approves vault to burn tokens
@@ -774,14 +738,14 @@ cast call 0xUSDTAddress \
   --rpc-url sepolia | cast --to-dec
 ```
 
-### 8. Monitor Platform
+### 7. Monitor Platform
 
 ```bash
 # Check total projects
 cast call $FACTORY_ADDRESS "getProjectCount()" --rpc-url sepolia | cast --to-dec
 
-# Check approved projects
-cast call $FACTORY_ADDRESS "getProjectsByStatus(uint8)" 1 --rpc-url sepolia
+# Get all projects
+cast call $FACTORY_ADDRESS "getAllProjects()" --rpc-url sepolia
 
 # Check vault stats
 cast call $VAULT_ADDRESS "totalRedeemed()" --rpc-url sepolia | cast --to-dec
