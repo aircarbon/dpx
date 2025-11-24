@@ -7,10 +7,11 @@ Complete documentation for the DPX (Decentralized Project Exchange) platform sma
 - [Overview](#overview)
 - [Architecture Components](#architecture-components)
 - [Deployment Guide](#deployment-guide)
+- [Interacting with Contracts](#interacting-with-contracts)
 - [Testing](#testing)
 - [Upgrading FctFactory](#upgrading-fctfactory)
-- [Interacting with Contracts](#interacting-with-contracts)
-- [Complete Workflow Example](#complete-workflow-example)
+- [Contract Source Files](#contract-source-files)
+- [Additional Resources](#additional-resources)
 
 ## Overview
 
@@ -124,15 +125,18 @@ The DPX (Decentralized Project Exchange) system enables tokenization of future c
 1. Configure environment variables in `.env`:
 ```bash
 # Wallet credentials (choose one)
-PRIVATE_KEY=your_private_key_here
-# OR
 MNEMONIC="your twelve word seed phrase"
+# OR
+PRIVATE_KEY=your_private_key_here
 
 # RPC URLs
+FUJI_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
+AVALANCHE_RPC_URL=https://api.avax.network/ext/bc/C/rpc
 SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your-api-key
-MAINNET_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/your-api-key
 
-# Contract verification (optional)
+# Contract verification
+SNOWTRACE_API_KEY=your_snowtrace_api_key
+SNOWTRACE_FUJI_API_KEY=your_snowtrace_fuji_api_key
 ETHERSCAN_API_KEY=your_etherscan_api_key
 
 # Optional: Owner address (multisig recommended for production)
@@ -148,73 +152,54 @@ source .env
 
 The FctFactory is deployed using the UUPS proxy pattern for upgradeability.
 
-#### Local Deployment (Anvil)
+**Choose your deployment method:**
 
-```bash
-# Terminal 1: Start local node
-anvil
+| Use Case | Command |
+|----------|---------|
+| **With mnemonic (account 0)** | `forge script script/DeployFctFactory.s.sol --rpc-url <network> --broadcast --mnemonics "$MNEMONIC"` |
+| **With mnemonic (custom index)** | `forge script script/DeployFctFactory.s.sol --rpc-url <network> --broadcast --mnemonics "$MNEMONIC" --mnemonic-indexes 1` |
+| **With PRIVATE_KEY from .env** | `forge script script/DeployFctFactory.s.sol --rpc-url <network> --broadcast --private-key $PRIVATE_KEY` |
+| **With custom owner (production)** | Add `OWNER_ADDRESS=0xMultisig` before command |
+| **With verification** | Add `--verify --etherscan-api-key $ETHERSCAN_API_KEY` to any command above |
+| **Local testing (Anvil)** | `forge script script/DeployFctFactory.s.sol --rpc-url anvil --broadcast` |
 
-# Terminal 2: Deploy
-forge script script/DeployFctFactory.s.sol --rpc-url anvil --broadcast
-```
+### Network Deployment Examples
 
-#### Testnet Deployment (Sepolia)
-
-**Deploy with deployer as owner:**
+**Ethereum Sepolia Testnet:**
 ```bash
 source .env
 
+# Using mnemonic (account 0, recommended)
 forge script script/DeployFctFactory.s.sol \
   --rpc-url sepolia \
   --broadcast \
-  --private-key $PRIVATE_KEY
-```
+  --mnemonics "$MNEMONIC"
 
-**Deploy with deployer as owner (using mnemonics):**
-```bash
-source .env && \
-
-DERIVED_KEY=$(cast wallet private-key "$MNEMONIC" --mnemonic-index 0) && \
-forge script script/DeployFctFactory.s.sol \
-  --rpc-url sepolia \
-  --broadcast \
-  --private-key $DERIVED_KEY
-```
-
-**Deploy with custom owner (recommended for production):**
-```bash
-source .env
-
-OWNER_ADDRESS=0xYourMultisigAddress \
-  forge script script/DeployFctFactory.s.sol \
-  --rpc-url sepolia \
-  --broadcast \
-  --private-key $PRIVATE_KEY
-```
-
-**With contract verification:**
-```bash
-source .env
-
+# With custom owner and verification (production)
 OWNER_ADDRESS=0xYourMultisigAddress \
   forge script script/DeployFctFactory.s.sol \
   --rpc-url sepolia \
   --broadcast \
   --verify \
   --etherscan-api-key $ETHERSCAN_API_KEY \
-  --private-key $PRIVATE_KEY
-```
+  --mnemonics "$MNEMONIC"
 
-**Using mnemonic:**
-```bash
-source .env
-
-OWNER_ADDRESS=0xYourMultisigAddress \
-  forge script script/DeployFctFactory.s.sol \
+# Using mnemonic with custom account index
+forge script script/DeployFctFactory.s.sol \
   --rpc-url sepolia \
   --broadcast \
-  --mnemonic "$MNEMONIC" \
-  --mnemonic-index 0
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-indexes 1
+```
+
+**Local Anvil (testing):**
+```bash
+# Terminal 1: Start Anvil
+anvil
+
+# Terminal 2: Deploy
+source .env
+forge script script/DeployFctFactory.s.sol --rpc-url anvil --broadcast
 ```
 
 **IMPORTANT**: The deployment outputs TWO addresses:
@@ -232,12 +217,344 @@ Always use the **Proxy Address** for all interactions!
      "transferOwnership(address)" \
      0xMultisigAddress \
      --rpc-url sepolia \
-     --private-key $PRIVATE_KEY
+     --mnemonics "$MNEMONIC" \
+     --mnemonic-index 0
    ```
 3. **Test basic functionality**:
-   - Propose a test project
-   - Approve and verify token deployment
+   - Create a test project
+   - Verify token deployment
    - Deploy vault and test redemption flow
+
+## Interacting with Contracts
+
+Use Foundry's `cast` tool to interact with deployed contracts.
+
+### Setup
+
+```bash
+source .env
+export FACTORY_ADDRESS=0xYourProxyAddress
+export SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/your-api-key
+```
+
+### 1. Project Management (FctFactory)
+
+#### Query Functions
+
+```bash
+# Get total project count
+cast call $FACTORY_ADDRESS "getProjectCount()" --rpc-url $SEPOLIA_RPC_URL | cast --to-dec
+
+# Get next project ID
+cast call $FACTORY_ADDRESS "getNextProjectId()" --rpc-url $SEPOLIA_RPC_URL | cast --to-dec
+
+# Get project details by ID
+cast call $FACTORY_ADDRESS \
+  "getProject(uint256)" \
+  0 \
+  --rpc-url $SEPOLIA_RPC_URL
+
+# Returns: (projectId, name, symbol, initialSupply, tokenAddress, vaultAddress, createdAt, vintageYear, projectRegistryCode)
+
+# Get all projects (may be gas-intensive)
+cast call $FACTORY_ADDRESS "getAllProjects()" --rpc-url $SEPOLIA_RPC_URL
+
+# Get token address for project
+cast call $FACTORY_ADDRESS \
+  "getTokenForProject(uint256)" \
+  0 \
+  --rpc-url $SEPOLIA_RPC_URL | xargs cast abi-decode "getTokenForProject(uint256)(address)"
+
+# Get project ID for token
+cast call $FACTORY_ADDRESS \
+  "getProjectIdForToken(address)" \
+  0xTokenAddress \
+  --rpc-url $SEPOLIA_RPC_URL | cast --to-dec
+
+# Get vault address for token
+cast call $FACTORY_ADDRESS \
+  "getVaultForToken(address)" \
+  0xTokenAddress \
+  --rpc-url $SEPOLIA_RPC_URL | xargs cast abi-decode "getVaultForToken(address)(address)"
+
+# Check if project exists
+cast call $FACTORY_ADDRESS \
+  "projectIdExists(uint256)" \
+  0 \
+  --rpc-url $SEPOLIA_RPC_URL
+```
+
+#### Create Project (Owner Only)
+
+```bash
+# Create project with empty metadata
+# With mnemonic:
+cast send $FACTORY_ADDRESS \
+  "createProject(string,string,uint256,uint256,string,(string,string)[])" \
+  "Future Carbon Credit - Alpha" \
+  "FCC-ALPHA" \
+  $(cast --to-wei 1000000) \
+  2025 \
+  "VCS-1234-2025" \
+  "[]" \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+
+# OR with PRIVATE_KEY:
+cast send $FACTORY_ADDRESS \
+  "createProject(string,string,uint256,uint256,string,(string,string)[])" \
+  "Future Carbon Credit - Alpha" \
+  "FCC-ALPHA" \
+  $(cast --to-wei 1000000) \
+  2025 \
+  "VCS-1234-2025" \
+  "[]" \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --private-key $PRIVATE_KEY
+
+# Note: This automatically deploys the FutureCarbonToken with the provided metadata
+# Returns: (projectId, tokenAddress)
+```
+
+#### Deploy Vault for Project (Owner Only)
+
+```bash
+# Deploy RedemptionVault for a project
+# With mnemonic:
+cast send $FACTORY_ADDRESS \
+  "deployVault(uint256,address)" \
+  0 \
+  0xUSDTAddress \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+
+# OR with PRIVATE_KEY:
+cast send $FACTORY_ADDRESS \
+  "deployVault(uint256,address)" \
+  0 \
+  0xUSDTAddress \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --private-key $PRIVATE_KEY
+```
+
+**Note:** Replace `--private-key $PRIVATE_KEY` with `--mnemonics "$MNEMONIC" --mnemonic-index 0` (or other index) for any command above.
+
+---
+
+### 2. RedemptionVault Interactions
+
+#### Query Functions
+
+```bash
+# Check if redemption is active
+cast call <VAULT_ADDRESS> \
+  "isRedemptionActive()" \
+  --rpc-url $SEPOLIA_RPC_URL | xargs cast abi-decode "isRedemptionActive()(bool)"
+
+# Get redemption rate per token
+cast call <VAULT_ADDRESS> \
+  "getRedemptionRate()" \
+  --rpc-url $SEPOLIA_RPC_URL | cast --to-dec
+
+# Get available stablecoin in vault
+cast call <VAULT_ADDRESS> \
+  "getAvailableStablecoin()" \
+  --rpc-url $SEPOLIA_RPC_URL | cast --to-dec
+
+# Get total amount redeemed
+cast call <VAULT_ADDRESS> \
+  "totalRedeemed()" \
+  --rpc-url $SEPOLIA_RPC_URL | cast --to-dec
+
+# Get FutureCarbonToken address
+cast call <VAULT_ADDRESS> \
+  "futureToken()" \
+  --rpc-url $SEPOLIA_RPC_URL
+
+# Get stablecoin address
+cast call <VAULT_ADDRESS> \
+  "stablecoin()" \
+  --rpc-url $SEPOLIA_RPC_URL
+```
+
+#### Activate Redemption (Owner Only)
+
+```bash
+# Step 1: Deposit stablecoin to the vault
+cast send <USDT_ADDRESS> \
+  "transfer(address,uint256)" \
+  <VAULT_ADDRESS> \
+  1000000000000 \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+
+# Step 2: Activate redemption (calculates rate)
+cast send <VAULT_ADDRESS> \
+  "activateRedemption()" \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+```
+
+#### Redeem Tokens (Token Holders)
+
+```bash
+# Step 1: Approve vault to burn your tokens
+cast send <TOKEN_ADDRESS> \
+  "approve(address,uint256)" \
+  <VAULT_ADDRESS> \
+  $(cast --to-wei 1000) \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+
+# Step 2: Swap tokens for stablecoin
+cast send <VAULT_ADDRESS> \
+  "swap(uint256)" \
+  $(cast --to-wei 1000) \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+```
+
+#### Administrative Functions (Owner Only)
+
+```bash
+# Pause redemptions
+cast send <VAULT_ADDRESS> \
+  "pause()" \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+
+# Unpause redemptions
+cast send <VAULT_ADDRESS> \
+  "unpause()" \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+```
+
+**Note:** Replace `--mnemonics "$MNEMONIC" --mnemonic-index 0` with `--private-key $PRIVATE_KEY` for any command above.
+
+---
+
+### 3. FutureCarbonToken Interactions
+
+FutureCarbonToken is a standard ERC-20 with additional features.
+
+#### Query Functions
+
+```bash
+# Get token name
+cast call <TOKEN_ADDRESS> "name()" --rpc-url $SEPOLIA_RPC_URL | xargs cast --to-ascii
+
+# Get token symbol
+cast call <TOKEN_ADDRESS> "symbol()" --rpc-url $SEPOLIA_RPC_URL | xargs cast --to-ascii
+
+# Get total supply
+cast call <TOKEN_ADDRESS> "totalSupply()" --rpc-url $SEPOLIA_RPC_URL | cast --from-wei
+
+# Get token decimals
+cast call <TOKEN_ADDRESS> "decimals()" --rpc-url $SEPOLIA_RPC_URL | cast --to-dec
+
+# Check balance of an address
+cast call <TOKEN_ADDRESS> \
+  "balanceOf(address)" \
+  0xUserAddress \
+  --rpc-url $SEPOLIA_RPC_URL | cast --from-wei
+
+# Check allowance
+cast call <TOKEN_ADDRESS> \
+  "allowance(address,address)" \
+  0xOwnerAddress \
+  0xSpenderAddress \
+  --rpc-url $SEPOLIA_RPC_URL | cast --from-wei
+
+# Get vintage year
+cast call <TOKEN_ADDRESS> "getVintageYear()" --rpc-url $SEPOLIA_RPC_URL | cast --to-dec
+
+# Get project registry code
+cast call <TOKEN_ADDRESS> "getProjectRegistryCode()" --rpc-url $SEPOLIA_RPC_URL | xargs cast --to-ascii
+
+# Get all metadata entries
+cast call <TOKEN_ADDRESS> "getMetadataEntries()" --rpc-url $SEPOLIA_RPC_URL
+
+# Get comprehensive project metadata
+cast call <TOKEN_ADDRESS> "getProjectMetadata()" --rpc-url $SEPOLIA_RPC_URL
+```
+
+#### Token Transfers
+
+```bash
+# Transfer tokens
+cast send <TOKEN_ADDRESS> \
+  "transfer(address,uint256)" \
+  0xRecipient \
+  $(cast --to-wei 100) \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+
+# Approve spender
+cast send <TOKEN_ADDRESS> \
+  "approve(address,uint256)" \
+  0xSpenderAddress \
+  $(cast --to-wei 1000) \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+
+# Transfer from (requires approval)
+cast send <TOKEN_ADDRESS> \
+  "transferFrom(address,address,uint256)" \
+  0xFromAddress \
+  0xToAddress \
+  $(cast --to-wei 100) \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+```
+
+#### Administrative Functions (Owner Only)
+
+```bash
+# Mint new tokens
+cast send <TOKEN_ADDRESS> \
+  "mint(address,uint256)" \
+  0xRecipient \
+  $(cast --to-wei 1000) \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+
+# Burn tokens (owner only)
+cast send <TOKEN_ADDRESS> \
+  "burn(uint256)" \
+  $(cast --to-wei 500) \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+
+# Pause transfers
+cast send <TOKEN_ADDRESS> \
+  "pause()" \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+
+# Unpause transfers
+cast send <TOKEN_ADDRESS> \
+  "unpause()" \
+  --rpc-url $SEPOLIA_RPC_URL \
+  --mnemonics "$MNEMONIC" \
+  --mnemonic-index 0
+```
+
+**Note:** Replace `--mnemonics "$MNEMONIC" --mnemonic-index 0` with `--private-key $PRIVATE_KEY` for any command above.
 
 ## Testing
 
@@ -398,358 +715,6 @@ cast call <PROXY_ADDRESS> "getProject(uint256)(tuple)" 0 --rpc-url sepolia
 
 # Test new functionality
 # ...
-```
-
-## Interacting with Contracts
-
-Use Foundry's `cast` tool to interact with deployed contracts.
-
-### Setup
-
-```bash
-source .env
-export FACTORY_ADDRESS=0xYourProxyAddress
-```
-
-### Registry Query Functions
-
-#### Get Project Count
-
-```bash
-cast call $FACTORY_ADDRESS "getProjectCount()" --rpc-url sepolia | cast --to-dec
-```
-
-#### Get Next Project ID
-
-```bash
-cast call $FACTORY_ADDRESS "getNextProjectId()" --rpc-url sepolia | cast --to-dec
-```
-
-#### Get Project Details
-
-```bash
-# Get project by ID
-cast call $FACTORY_ADDRESS \
-  "getProject(uint256)" \
-  0 \
-  --rpc-url sepolia
-
-# Returns: (projectId, name, symbol, initialSupply, tokenAddress, vaultAddress, createdAt, vintageYear, projectRegistryCode)
-```
-
-#### Get All Projects
-
-```bash
-cast call $FACTORY_ADDRESS "getAllProjects()" --rpc-url sepolia
-```
-
-
-#### Get Token for Project
-
-```bash
-cast call $FACTORY_ADDRESS \
-  "getTokenForProject(uint256)" \
-  0 \
-  --rpc-url sepolia | xargs cast abi-decode "getTokenForProject(uint256)(address)"
-```
-
-#### Get Vault for Token
-
-```bash
-cast call $FACTORY_ADDRESS \
-  "getVaultForToken(address)" \
-  0xTokenAddress \
-  --rpc-url sepolia | xargs cast abi-decode "getVaultForToken(address)(address)"
-```
-
-### Project Management Functions
-
-#### Create a Project (Owner Only)
-
-```bash
-# Create project with metadata (requires constructing metadata array)
-# For simplicity, this example uses empty metadata
-cast send $FACTORY_ADDRESS \
-  "createProject(string,string,uint256,uint256,string,(string,string)[])" \
-  "Future Carbon Credit - Alpha" \
-  "FCC-ALPHA" \
-  $(cast --to-wei 1000000) \
-  2025 \
-  "VCS-1234-2025" \
-  "[]" \
-  --rpc-url sepolia \
-  --private-key $PRIVATE_KEY
-
-# Note: This automatically deploys the FutureCarbonToken with the provided metadata
-# Returns: (projectId, tokenAddress)
-```
-
-#### Deploy Vault (Owner Only)
-
-```bash
-# Deploy RedemptionVault for a project
-# Requires: USDT token address
-cast send $FACTORY_ADDRESS \
-  "deployVault(uint256,address)" \
-  0 \
-  0xUSDTAddress \
-  --rpc-url sepolia \
-  --private-key $PRIVATE_KEY
-```
-
-### Redemption Vault Interactions
-
-#### Activate Redemption (Owner Only)
-
-```bash
-# First, deposit USDT to the vault
-cast send <USDT_ADDRESS> \
-  "transfer(address,uint256)" \
-  <VAULT_ADDRESS> \
-  1000000000000 \
-  --rpc-url sepolia \
-  --private-key $PRIVATE_KEY
-
-# Then activate redemption (calculates rate)
-cast send <VAULT_ADDRESS> \
-  "activateRedemption()" \
-  --rpc-url sepolia \
-  --private-key $PRIVATE_KEY
-```
-
-#### Check Redemption Status
-
-```bash
-# Check if redemption is active
-cast call <VAULT_ADDRESS> \
-  "isRedemptionActive()" \
-  --rpc-url sepolia | xargs cast abi-decode "isRedemptionActive()(bool)"
-
-# Get redemption rate per token
-cast call <VAULT_ADDRESS> \
-  "getRedemptionRate()" \
-  --rpc-url sepolia | cast --to-dec
-
-# Get available USDT in vault
-cast call <VAULT_ADDRESS> \
-  "getAvailableStablecoin()" \
-  --rpc-url sepolia | cast --to-dec
-
-# Get total redeemed
-cast call <VAULT_ADDRESS> \
-  "totalRedeemed()" \
-  --rpc-url sepolia | cast --to-dec
-```
-
-#### Redeem Tokens for USDT (Token Holders)
-
-```bash
-# First, approve vault to burn your tokens
-cast send <TOKEN_ADDRESS> \
-  "approve(address,uint256)" \
-  <VAULT_ADDRESS> \
-  $(cast --to-wei 1000) \
-  --rpc-url sepolia \
-  --private-key $PRIVATE_KEY
-
-# Then swap tokens for USDT
-cast send <VAULT_ADDRESS> \
-  "swap(uint256)" \
-  $(cast --to-wei 1000) \
-  --rpc-url sepolia \
-  --private-key $PRIVATE_KEY
-```
-
-#### Pause/Unpause Vault (Owner Only)
-
-```bash
-# Pause redemptions
-cast send <VAULT_ADDRESS> "pause()" \
-  --rpc-url sepolia \
-  --private-key $PRIVATE_KEY
-
-# Unpause redemptions
-cast send <VAULT_ADDRESS> "unpause()" \
-  --rpc-url sepolia \
-  --private-key $PRIVATE_KEY
-```
-
-### FutureCarbonToken Interactions
-
-FutureCarbonToken is a standard ERC-20 with additional features:
-
-```bash
-# Get token info
-cast call <TOKEN_ADDRESS> "name()" --rpc-url sepolia | xargs cast --to-ascii
-cast call <TOKEN_ADDRESS> "symbol()" --rpc-url sepolia | xargs cast --to-ascii
-cast call <TOKEN_ADDRESS> "totalSupply()" --rpc-url sepolia | cast --from-wei
-
-# Check balance
-cast call <TOKEN_ADDRESS> \
-  "balanceOf(address)" \
-  0xUserAddress \
-  --rpc-url sepolia | cast --from-wei
-
-# Transfer tokens
-cast send <TOKEN_ADDRESS> \
-  "transfer(address,uint256)" \
-  0xRecipient \
-  $(cast --to-wei 100) \
-  --rpc-url sepolia \
-  --private-key $PRIVATE_KEY
-
-# Burn tokens (owner only)
-cast send <TOKEN_ADDRESS> \
-  "burn(uint256)" \
-  $(cast --to-wei 500) \
-  --rpc-url sepolia \
-  --private-key $PRIVATE_KEY
-
-# Pause/unpause transfers (owner only)
-cast send <TOKEN_ADDRESS> "pause()" --rpc-url sepolia --private-key $PRIVATE_KEY
-cast send <TOKEN_ADDRESS> "unpause()" --rpc-url sepolia --private-key $PRIVATE_KEY
-```
-
-## Complete Workflow Example
-
-Here's a complete end-to-end workflow for the DPX platform:
-
-### 1. Deploy Platform
-
-```bash
-source .env
-OWNER_ADDRESS=0xMultisigAddress \
-  forge script script/DeployFctFactory.s.sol \
-  --rpc-url sepolia \
-  --broadcast \
-  --verify \
-  --private-key $PRIVATE_KEY
-
-# Save the PROXY_ADDRESS from output
-export FACTORY_ADDRESS=0xProxyAddress
-```
-
-### 2. Owner Creates Project
-
-```bash
-# Owner creates a carbon credit project (automatically deploys token)
-cast send $FACTORY_ADDRESS \
-  "createProject(string,string,uint256,uint256,string,(string,string)[])" \
-  "Rainforest Preservation 2025" \
-  "RFP2025" \
-  $(cast --to-wei 5000000) \
-  2025 \
-  "VCS-RFP-2025" \
-  "[]" \
-  --rpc-url sepolia \
-  --private-key $OWNER_KEY
-
-# Get deployed token address
-TOKEN_ADDRESS=$(cast call $FACTORY_ADDRESS \
-  "getTokenForProject(uint256)" \
-  0 \
-  --rpc-url sepolia | xargs cast abi-decode "getTokenForProject(uint256)(address)")
-
-echo "Token deployed at: $TOKEN_ADDRESS"
-
-# Check project details
-cast call $FACTORY_ADDRESS "getProject(uint256)" 0 --rpc-url sepolia
-```
-
-### 3. Token Trading Phase
-
-```bash
-# Owner transfers tokens to investors
-cast send $TOKEN_ADDRESS \
-  "transfer(address,uint256)" \
-  0xInvestor1 \
-  $(cast --to-wei 100000) \
-  --rpc-url sepolia \
-  --private-key $OWNER_KEY
-
-# Investors can trade tokens on secondary markets
-# ...
-```
-
-### 4. Project Completes & Vault Deployment
-
-```bash
-# Carbon credits sold, ready for redemption
-# Owner deploys redemption vault
-cast send $FACTORY_ADDRESS \
-  "deployVault(uint256,address)" \
-  0 \
-  0xUSDTAddress \
-  --rpc-url sepolia \
-  --private-key $OWNER_KEY
-
-# Get vault address
-VAULT_ADDRESS=$(cast call $FACTORY_ADDRESS \
-  "getVaultForToken(address)" \
-  $TOKEN_ADDRESS \
-  --rpc-url sepolia | xargs cast abi-decode "getVaultForToken(address)(address)")
-
-echo "Vault deployed at: $VAULT_ADDRESS"
-```
-
-### 5. Deposit USDT and Activate Redemption
-
-```bash
-# Owner deposits USDT from carbon credit sales
-cast send 0xUSDTAddress \
-  "transfer(address,uint256)" \
-  $VAULT_ADDRESS \
-  500000000000 \
-  --rpc-url sepolia \
-  --private-key $OWNER_KEY
-
-# Activate redemption (calculates rate)
-cast send $VAULT_ADDRESS \
-  "activateRedemption()" \
-  --rpc-url sepolia \
-  --private-key $OWNER_KEY
-
-# Check redemption rate
-cast call $VAULT_ADDRESS "getRedemptionRate()" --rpc-url sepolia | cast --to-dec
-```
-
-### 6. Token Holders Redeem
-
-```bash
-# Investor approves vault to burn tokens
-cast send $TOKEN_ADDRESS \
-  "approve(address,uint256)" \
-  $VAULT_ADDRESS \
-  $(cast --to-wei 100000) \
-  --rpc-url sepolia \
-  --private-key $INVESTOR_KEY
-
-# Investor redeems tokens for USDT
-cast send $VAULT_ADDRESS \
-  "swap(uint256)" \
-  $(cast --to-wei 100000) \
-  --rpc-url sepolia \
-  --private-key $INVESTOR_KEY
-
-# Check USDT balance
-cast call 0xUSDTAddress \
-  "balanceOf(address)" \
-  0xInvestorAddress \
-  --rpc-url sepolia | cast --to-dec
-```
-
-### 7. Monitor Platform
-
-```bash
-# Check total projects
-cast call $FACTORY_ADDRESS "getProjectCount()" --rpc-url sepolia | cast --to-dec
-
-# Get all projects
-cast call $FACTORY_ADDRESS "getAllProjects()" --rpc-url sepolia
-
-# Check vault stats
-cast call $VAULT_ADDRESS "totalRedeemed()" --rpc-url sepolia | cast --to-dec
-cast call $VAULT_ADDRESS "getAvailableStablecoin()" --rpc-url sepolia | cast --to-dec
 ```
 
 ## Contract Source Files
