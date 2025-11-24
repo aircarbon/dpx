@@ -1,4 +1,10 @@
 {
+  "lib/airswap-protocols": {
+    "tag": {
+      "name": "v5.0.0",
+      "rev": "28156e5115218a444d35f35162162f643e5ccb91"
+    }
+  },
   "lib/forge-std": {
     "tag": {
       "name": "v1.11.0",
@@ -15,6 +21,12 @@
     "tag": {
       "name": "v5.4.0",
       "rev": "e725abddf1e01cf05ace496e950fc8e243cc7cab"
+    }
+  },
+  "lib/solady": {
+    "tag": {
+      "name": "v0.0.173",
+      "rev": "e7024bee47b1623f436ee491ca9458a6dc8abce9"
     }
   }
 }

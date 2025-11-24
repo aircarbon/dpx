@@ -11,7 +11,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * @title FutureCarbonToken
  * @dev ERC-20 token representing future carbon credits for a specific project.
  *
- * This token is deployed by the FctFactory when a project is approved.
+ * This token is deployed by the FctFactory when a project is created.
  * Each project gets its own immutable token contract (non-upgradeable).
  *
  * Features:
@@ -21,9 +21,10 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * - Pausable: Emergency stop for transfers
  * - Mintable: Owner can mint tokens (typically only at deployment)
  * - 18 decimals: Standard ERC-20 precision
+ * - Immutable Metadata: vintage year, registry code, and custom metadata
  *
  * Lifecycle:
- * 1. Deployed by FctFactory upon project approval
+ * 1. Deployed by FctFactory upon project creation
  * 2. Initial supply minted to owner (company address)
  * 3. Tokens traded on exchange
  * 4. When project completes, tokens redeemed via RedemptionVault (burned)
@@ -32,23 +33,59 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  * is immutable, providing predictability and security for token holders.
  */
 contract FutureCarbonToken is ERC20, ERC20Permit, ERC20Burnable, ERC20Pausable, Ownable {
+    // ============ Structs ============
+
+    /// @notice Metadata entry for custom key-value pairs
+    struct MetadataEntry {
+        string key;
+        string value;
+    }
+
+    // ============ Immutable State Variables ============
+
+    /// @notice Vintage year of the carbon credits
+    uint256 public vintageYear;
+
+    /// @notice Project registry code (e.g., Verra, Gold Standard ID)
+    string public projectRegistryCode;
+
+    /// @notice Custom metadata entries (immutable after deployment)
+    MetadataEntry[] public metadata;
     /**
      * @dev Constructor initializes the token with project details
      * @param name The name of the token (e.g., "Future Carbon Credit - Project Alpha")
      * @param symbol The symbol of the token (e.g., "FCC-ALPHA")
      * @param initialSupply The initial supply of tokens to mint (with 18 decimals)
      * @param owner The owner address (typically company multisig wallet)
+     * @param _vintageYear Vintage year of the carbon credits
+     * @param _projectRegistryCode Project registry code (e.g., Verra ID)
+     * @param _metadata Array of custom metadata key-value pairs
      *
-     * NOTE: The initial supply is minted to the owner address during deployment
+     * NOTE: The initial supply is minted to the owner address during deployment.
+     * All metadata fields are immutable after deployment.
      */
     constructor(
         string memory name,
         string memory symbol,
         uint256 initialSupply,
-        address owner
+        address owner,
+        uint256 _vintageYear,
+        string memory _projectRegistryCode,
+        MetadataEntry[] memory _metadata
     ) ERC20(name, symbol) ERC20Permit(name) Ownable(owner) {
         require(owner != address(0), "Owner cannot be zero address");
         require(initialSupply > 0, "Initial supply must be greater than 0");
+        require(_vintageYear > 0, "Vintage year must be greater than 0");
+        require(bytes(_projectRegistryCode).length > 0, "Project registry code cannot be empty");
+
+        vintageYear = _vintageYear;
+        projectRegistryCode = _projectRegistryCode;
+
+        // Store metadata entries
+        for (uint256 i = 0; i < _metadata.length; i++) {
+            require(bytes(_metadata[i].key).length > 0, "Metadata key cannot be empty");
+            metadata.push(_metadata[i]);
+        }
 
         _mint(owner, initialSupply);
     }
@@ -102,5 +139,61 @@ contract FutureCarbonToken is ERC20, ERC20Permit, ERC20Burnable, ERC20Pausable, 
         override(ERC20, ERC20Pausable)
     {
         super._update(from, to, value);
+    }
+
+    // ============ Getter Functions ============
+    // NOTE: vintageYear, projectRegistryCode and metadata are already public and has 
+    // an auto-generated getter, but these functions are explicitly defined for clarity and documentation
+
+    /**
+     * @dev Get the vintage year of the carbon credits
+     * @return year The vintage year
+     *
+     */
+    function getVintageYear() external view returns (uint256 year) {
+        return vintageYear;
+    }
+
+    /**
+     * @dev Get the project registry code
+     * @return code The project registry code
+     */
+    function getProjectRegistryCode() external view returns (string memory code) {
+        return projectRegistryCode;
+    }
+
+    /**
+     * @dev Get all metadata entries
+     * @return entries Array of all metadata key-value pairs
+     */
+    function getMetadataEntries() external view returns (MetadataEntry[] memory entries) {
+        return metadata;
+    }
+
+    /**
+     * @dev Get comprehensive project metadata
+     * @return tokenName Token name
+     * @return tokenSymbol Token symbol
+     * @return supply Total supply of tokens
+     * @return year Vintage year
+     * @return registryCode Project registry code
+     * @return metadataEntries Array of metadata key-value pairs
+     *
+     * NOTE: This function provides all project-specific data in a single call,
+     * which is more gas-efficient when you need multiple fields
+     */
+    function getProjectMetadata()
+        external
+        view
+        returns (
+            string memory tokenName,
+            string memory tokenSymbol,
+            uint256 supply,
+            uint256 year,
+            string memory registryCode,
+            MetadataEntry[] memory metadataEntries
+        )
+    {
+        return (name(), symbol(), totalSupply(), vintageYear, projectRegistryCode, metadata);
     }
 }
