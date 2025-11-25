@@ -42,7 +42,7 @@ export default function Home() {
                 <h3>ACR Governance Token</h3>
                 <p>
                   Upgradeable ERC-20 governance token with on-chain voting capabilities.
-                  Deployed on Avalanche C-chain with full DAO integration via Tally.
+                  Deployed on Avalanche C-chain.
                 </p>
               </div>
               <div className="col col--6">

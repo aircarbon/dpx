@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # ACXRWA Architecture Refactoring Roadmap
 ## Phase 1: CPX to DPX Transformation
 

@@ -2,7 +2,7 @@ import {themes as prismThemes} from 'prism-react-renderer';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'DPX Documentation',
+  title: 'ACX RWA Documentation',
   tagline: 'Smart Contracts for ACR Governance & Carbon Credit Tokenization',
   favicon: 'img/favicon.ico',
 
@@ -48,17 +48,17 @@ const config = {
     ({
       image: 'img/docusaurus-social-card.jpg',
       navbar: {
-        title: 'DPX',
+        title: 'ACX RWA',
         logo: {
-          alt: 'DPX Logo',
-          src: 'img/logo.svg',
+          alt: 'Logo',
+          src: 'img/logo.png',
         },
         items: [
           {
             type: 'docSidebar',
             sidebarId: 'tutorialSidebar',
             position: 'left',
-            label: 'Documentation',
+            label: 'Docs',
           },
           {
             href: 'https://github.com/aircarbon/dpx',
@@ -70,26 +70,8 @@ const config = {
       footer: {
         style: 'dark',
         links: [
-          {
-            title: 'Docs',
-            items: [
-              {
-                label: 'Getting Started',
-                to: '/docs/intro',
-              },
-            ],
-          },
-          {
-            title: 'Community',
-            items: [
-              {
-                label: 'GitHub',
-                href: 'https://github.com/aircarbon/dpx',
-              },
-            ],
-          },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} DPX Project. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} DPX Project`,
       },
       prism: {
         theme: prismThemes.github,
