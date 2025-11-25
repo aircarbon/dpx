@@ -55,9 +55,3 @@ forge build
 ## Documentation
 
 - [Architecture Refactoring Roadmap](./architecture-roadmap) - Complete technical documentation for CPX to DPX transformation
-
-<!-- TODO: Add these documentation files
-- [ACR Governance Documentation](./acr-governance/overview.md)
-- [DPX Platform Documentation](./dpx-platform/overview.md)
-- [Testing Guide](./guides/testing.md)
--->

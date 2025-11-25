@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feat/docusaurus  # Temporary: for testing deployment
     paths:
       - 'docs/public/**'
       - 'docs-website/**'
