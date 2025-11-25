@@ -38,7 +38,7 @@ Single platform, dual custody models, unified liquidity across centralized and d
 
 **DPX (Decentralized Project Exchange):**
 - Deploys on **Avalanche C-Chain** (Chain ID: 43114)
-- Sub-second finality (<2 seconds)
+- Sub-second finality (`<2 seconds`)
 - Low gas costs (~$0.42 per swap)
 - Robust DeFi ecosystem (Trader Joe, Aave, Benqi)
 - Ideal for crypto-native projects and buyers
@@ -46,7 +46,7 @@ Single platform, dual custody models, unified liquidity across centralized and d
 **CPX (Centralized Project Exchange):**
 - Migrates to **ACXNET** (AvaLabs Custom Layer 1)
 - Zero gas fees for users (ACX-subsidized)
-- Instant finality (<1 second)
+- Instant finality (`<1 second`)
 - Private mempool (MEV protection)
 - Ideal for regulated markets and institutions
 
@@ -303,10 +303,10 @@ Unified revenue pool from both CPX and DPX:
 ## 10. Success Metrics
 
 **Technical:**
-- Swap completion rate >95%
-- Settlement time <5 minutes
-- Gas cost <$1 (Avalanche)
-- ACXNET uptime >99.9%
+- Swap completion rate `>95%`
+- Settlement time `<5 minutes`
+- Gas cost `<$1` (Avalanche)
+- ACXNET uptime `>99.9%`
 
 **Business:**
 - 1,000+ active DPX wallets (Q1 2026)
@@ -316,8 +316,8 @@ Unified revenue pool from both CPX and DPX:
 
 **Operational:**
 - Zero critical security incidents
-- <10% code duplication (CPX/DPX)
-- <2 hour rollback capability
+- `<10%` code duplication (CPX/DPX)
+- `<2 hour` rollback capability
 
 ---
 
@@ -670,10 +670,10 @@ async function validateAccess(walletAddress: string, ipAddress: string) {
 
 | Metric | ACXNET (CPX) | Avalanche (DPX) |
 |--------|--------------|-----------------|
-| **Finality** | <1 second | <2 seconds |
+| **Finality** | `<1 second` | `<2 seconds` |
 | **Throughput** | 10K+ TPS (configurable) | 4,500 TPS |
 | **Gas (User)** | $0.00 (subsidized) | ~$0.42 |
-| **Gas (ACX)** | <$0.01 per tx | $0 (users pay) |
+| **Gas (ACX)** | `<$0.01 per tx` | $0 (users pay) |
 | **Validator Set** | ACX + institutional partners | Public Avalanche validators |
 | **MEV Protection** | Private mempool | Standard |
 
@@ -703,7 +703,7 @@ async function validateAccess(walletAddress: string, ipAddress: string) {
 
 | Network | Cost | Finality | Throughput |
 |---------|------|----------|------------|
-| **Avalanche** | **$0.42** | **<2 sec** | **4,500 TPS** |
+| **Avalanche** | **$0.42** | **`<2 sec`** | **4,500 TPS** |
 | Polygon | $0.10 | ~30 sec | ~7,000 TPS |
 | Arbitrum | $2.00 | ~15 min | ~40,000 TPS |
 | Ethereum | $50+ | ~12 min | ~15 TPS |
@@ -792,7 +792,7 @@ async function validateAccess(walletAddress: string, ipAddress: string) {
 - Configure backend with mainnet addresses
 - Deploy indexer for Avalanche event tracking
 - Launch DPX with **handpicked projects and buyers familiar with DeFi/crypto primitives**
-- Monitor swap completion rates (target: >95%)
+- Monitor swap completion rates (target: `>95%`)
 
 **Operations:**
 - Grafana dashboards for both networks (ACXNET + Avalanche)
@@ -819,8 +819,8 @@ async function validateAccess(walletAddress: string, ipAddress: string) {
 - Enable Core Wallet, Rabby Wallet support
 
 **Performance Targets:**
-- DPX: <$1 gas per swap
-- CPX: <$0.01 backend cost (user pays $0)
+- DPX: `<$1` gas per swap
+- CPX: `<$0.01` backend cost (user pays $0)
 - 1,000+ active DPX wallets
 - $15M+ USDC volume
 
@@ -1012,7 +1012,7 @@ Each FCT project-vintage gets unique ERC-20 contract with embedded compliance me
 | **Method** | `transferOrTrade()` atomic swap | SwapBox bilateral escrow |
 | **Signer** | ACX admin | Buyer + seller (4 txs) |
 | **Trigger** | Seller accepts on MBv2 → auto-settle | Seller accepts → users deposit |
-| **Finality** | <1 second | ~4 seconds (4 transactions) |
+| **Finality** | `<1 second` | ~4 seconds (4 transactions) |
 | **Recovery** | Database rollback | Auto-refund after 24h expiry |
 | **Custody** | ACX controls ledger | SwapBox holds escrow |
 
@@ -1025,7 +1025,7 @@ Each FCT project-vintage gets unique ERC-20 contract with embedded compliance me
 | **Trading** | MBv2 bilateral negotiation | Same (MBv2) |
 | **Deposit Time** | 1-3 days (bank wire) | Instant (if USDC on Avalanche) |
 | **Settlement** | Instant after acceptance | 4-step (deposit USDC → deposit FCT → withdraw each) |
-| **Settlement Time** | <1 second | <5 minutes typical |
+| **Settlement Time** | `<1 second` | `<5 minutes` typical |
 
 ---
 
@@ -1072,7 +1072,7 @@ These components serve **contract-based trading** (CET, GNT), not project-based 
 - In-app wallet setup guides (video tutorials)
 - Fallback to CPX mode for users without wallets
 - 24/7 support chat specialized in wallet troubleshooting
-- Social recovery options (Argent, Safe{Wallet})
+- Social recovery options (Argent, Safe\{Wallet\})
 
 ---
 
@@ -1141,11 +1141,11 @@ These components serve **contract-based trading** (CET, GNT), not project-based 
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| Swap success rate | >95% | SwapBox completed / configured |
-| Settlement latency (DPX) | <5 minutes | Time from both deposits to both withdrawals |
-| Gas cost (DPX) | <$1 per swap | Average Avalanche gas cost |
-| ACXNET uptime | >99.9% | Network availability |
-| STMv2 finality | <1 second | Block confirmation time |
+| Swap success rate | `>95%` | SwapBox completed / configured |
+| Settlement latency (DPX) | `<5 minutes` | Time from both deposits to both withdrawals |
+| Gas cost (DPX) | `<$1 per swap` | Average Avalanche gas cost |
+| ACXNET uptime | `>99.9%` | Network availability |
+| STMv2 finality | `<1 second` | Block confirmation time |
 
 ### 32.2 Business Metrics
 
@@ -1161,11 +1161,11 @@ These components serve **contract-based trading** (CET, GNT), not project-based 
 
 | Metric | Target |
 |--------|--------|
-| Code duplication (CPX/DPX) | <10% |
-| Mode toggle time (new entity) | <1 hour |
-| Rollback time (if critical bug) | <2 hours |
+| Code duplication (CPX/DPX) | `<10%` |
+| Mode toggle time (new entity) | `<1 hour` |
+| Rollback time (if critical bug) | `<2 hours` |
 | Security incidents | Zero critical |
-| Support tickets (wallet issues) | <5% |
+| Support tickets (wallet issues) | `<5%` |
 
 ---
 
@@ -1694,8 +1694,8 @@ Both Withdraw
 
 | Mode | Network | Chain ID | Gas (User) | Finality |
 |------|---------|----------|------------|----------|
-| DPX | Avalanche C-Chain | 43114 | ~$0.42 | <2 sec |
-| CPX | ACXNET | TBD | $0.00 | <1 sec |
+| DPX | Avalanche C-Chain | 43114 | ~$0.42 | `<2 sec` |
+| CPX | ACXNET | TBD | $0.00 | `<1 sec` |
 
 ### M.2 Smart Contracts
 
