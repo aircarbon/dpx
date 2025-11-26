@@ -98,6 +98,22 @@ Beyond standard ERC-20 functionality, FCT tokens include Future Carbon Credit me
 - **Registry Code:** Identifier linking to the carbon registry (e.g., Verra, Gold Standard)
 - **Custom Metadata:** Key-value pairs for additional project-specific attributes (methodology, geography, project type)
 
+**Metadata Storage Approach:**
+
+For storing extended metadata beyond on-chain storage, DPX will leverage Avalanche-native solutions:
+
+*Current Implementation (C-Chain):*
+- **Compressed Metadata Hashes:** Will store content-addressed hashes on-chain within FCT contracts
+- **Avalanche Indexer:** Will use Avalanche's GraphQL indexer to expose human-readable metadata tied to token contracts
+- **EVM-Native Lookups:** Will enable fast queries without requiring IPFS infrastructure
+- This approach will provide reliability and simplicity while maintaining ERC-20 compatibility
+
+*Future Considerations (Phase 2):*
+- **Avalanche Warp Messaging (AWM) + Blob Storage:** Native subnet messaging with upcoming blob storage primitives (similar to Ethereum's EIP-4844) could provide compact, low-cost off-chain-like data anchoring for FCT metadata references
+- **Cross-Subnet Metadata:** AWM will enable future metadata sharing between DPX (C-Chain) and ACXNET (custom subnet) without traditional IPFS dependencies
+
+Note: While IPFS remains a viable option for decentralized metadata storage, Avalanche-native solutions will offer tighter integration with our C-Chain deployment and align with the platform's subnet interoperability strategy.
+
 **Additional Features:**
 - **Permit (EIP-2612):** Enables gasless approvals via off-chain signatures, improving user experience for trading workflows
 - **Burnable:** Required for the redemption process—tokens are burned when exchanged for proceeds

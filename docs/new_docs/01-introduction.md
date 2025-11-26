@@ -10,7 +10,7 @@
 
 ### What is DPX?
 
-DPX (Decentralized Project Exchange) is a non-custodial, DeFi-native marketplace for trading tokenized Real-World Assets (RWAs) in the form of carbon credits, built as an extension of the ACX (AirCarbon Exchange) platform. DPX transforms how carbon markets operate by enabling permissionless global access to Future Carbon Tons (FCTs)—tokenized RWA representations of forward carbon contracts derived from Emission Reduction Purchase Agreements (ERPAs).
+DPX (Decentralized Project Exchange) is a non-custodial, DeFi-native marketplace for trading tokenized Real-World Assets (RWAs) in the form of carbon credits, built as an extension of the ACX (AirCarbon Exchange) platform. DPX transforms how carbon markets operate by enabling permissionless global access to USDC-convertible Future Carbon Tons (FCTs)—tokenized RWA representations of forward carbon contracts derived from Emission Reduction Purchase Agreements (ERPAs).
 
 While ACX's existing Carbon Project Exchange (CPX) serves institutional and regulated markets through a custodial model, DPX expands access to DeFi-native participants, DAO treasuries, crypto investors, and anyone seeking non-custodial exposure to carbon RWAs. Together, CPX and DPX create a dual-mode platform that serves the entire spectrum of carbon market participants—from traditional institutions to decentralized protocols.
 

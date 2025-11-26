@@ -89,15 +89,22 @@ By connecting CPX and DPX liquidity pools, ACXRWA can:
 
 ### Bridge Architecture
 
-The bridge between CPX (on ACXNET) and DPX (on Avalanche C-Chain) will enable asset transfers between the two ecosystems:
+The bridge between CPX (on ACXNET) and DPX (on Avalanche) will leverage native Avalanche primitives to enable secure, transparent asset transfers:
 
-**CPX → DPX Flow:**
-Users holding FCTs in their CPX account (STMv2 ledger) can bridge assets to their DPX wallet, receiving equivalent ERC-20 FCT tokens on Avalanche C-Chain. This unlocks DeFi composability for institutionally-sourced carbon credits.
+**Avalanche C-Chain (Primary Layer):**
+Will host DPX's ERC-20 FCT tokens, smart contracts (UsdcDistributor, governance, marketplace settlement), and DeFi composability layer. All non-custodial trading and asset management will occur here.
 
-**DPX → CPX Flow:**
-Users holding FCT tokens in their DPX wallet can bridge assets to their CPX account, gaining access to institutional counterparties and fiat settlement options.
+**Avalanche X-Chain (Routing & Registry):**
+Will serve as an immutable provenance ledger for FCT issuance and bridging events. When CPX-registered FCTs are issued in STMv2, issuance hashes will be anchored to X-Chain before bridging to C-Chain, creating a lightweight, timestamped audit trail that preserves traceability across both platforms.
 
-Both flows maintain full provenance tracking, ensuring that the origin and history of carbon credits remain transparent regardless of which platform they're traded on.
+**Bridge Flows:**
+- **CPX → DPX:** STMv2 FCT → X-Chain provenance record → C-Chain ERC-20 issuance via FCTBridge
+- **DPX → CPX:** C-Chain burn → X-Chain confirmation → STMv2 credit restoration
+
+**Future Enhancements:**
+- **Avalanche Subnets:** Regulatory segregation via permissioned CPX subnet with native KYC integration and jurisdictional firewalling
+- **Avalanche Warp Messaging (AWM):** Cross-platform state synchronization for delivery confirmations and carbon registry updates without external oracles
+- **Avalanche Indexer:** Real-time transparency for issuance, burns, redemptions, and market activity integrated into Avalanche ecosystem tools
 
 ### Implementation Approach
 

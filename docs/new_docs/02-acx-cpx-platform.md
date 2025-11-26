@@ -63,7 +63,7 @@ ACX is migrating the entire CPX platform from Polygon to ACXNET—a custom Avala
 - **Private Mempool:** MEV protection for institutional trades
 - **Institutional SLAs:** Controlled validator set with guaranteed uptime
 
-The migration involves a state snapshot of all Polygon balances and a hard cutover to ACXNET, after which Polygon infrastructure will be decommissioned.
+The migration involves a state snapshot of ACX ledger data and a hard cutover to ACXNET, after which Polygon infrastructure will be decommissioned.
 
 ### CPX Strengths & Limitations
 
