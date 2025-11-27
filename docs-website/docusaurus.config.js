@@ -50,7 +50,7 @@ const config = {
         hashed: true,
         indexDocs: true,
         indexBlog: false,
-        docsRouteBasePath: '/docs/external',
+        docsRouteBasePath: '/docs',
       },
     ],
   ],
