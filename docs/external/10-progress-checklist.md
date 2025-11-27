@@ -89,4 +89,3 @@ This section tracks the development progress of DPX. It is updated regularly as 
 ---
 
 *Previous: [09 - Testing & QA](./09-testing-qa.md)*
-*Next: [11 - Appendices](./11-appendices.md)*

@@ -49,20 +49,19 @@ This documentation provides a comprehensive technical overview of DPX for techni
 
 | Section | Description |
 |---------|-------------|
-| **02 - ACX Platform** | Overview of ACX Group and its existing exchange infrastructure |
-| **03 - CPX Overview** | The centralized Carbon Project Exchange and its architecture |
-| **04 - DPX Architecture** | Technical design, components, and technology choices |
-| **05 - Integration Strategy** | How DPX integrates with ACX and the dual-mode approach |
-| **06 - Roadmap** | Development phases and rollout strategy |
-| **07 - $ACR Token** | Tokenomics, utility, and distribution |
-| **08 - Compliance** | KYC/AML framework and regulatory approach |
-| **09 - Risk Mitigation** | Security measures and risk management |
-| **10 - Testing & QA** | Quality assurance and audit strategy |
-| **11 - Progress Checklist** | Public milestone tracker |
-| **12 - Appendices** | Glossary and references |
+| **02 - ACX & CPX Platform** | Overview of ACX Group, CPX, and existing exchange infrastructure |
+| **03 - DPX Architecture** | Technical design, components, and technology choices |
+| **04 - Integration Strategy** | How DPX integrates with ACX and the dual-mode approach |
+| **05 - Roadmap** | Development phases and rollout strategy |
+| **06 - $ACR Token** | Tokenomics, utility, and distribution |
+| **07 - Compliance** | KYC/AML framework and regulatory approach |
+| **08 - Risk Mitigation** | Security measures and risk management |
+| **09 - Testing & QA** | Quality assurance and audit strategy |
+| **10 - Progress Checklist** | Public milestone tracker |
+| **11 - Appendices** | Glossary and references |
 
 For investment-focused information, token distribution details, and market opportunity analysis, refer to the **ACXRWA Whitepaper**.
 
 ---
 
-*Next: [02 - ACX Platform Overview](./02-acx-platform.md)*
+*Next: [02 - ACX & CPX Platform](./02-acx-cpx-platform.md)*
