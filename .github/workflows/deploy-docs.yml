@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'docs/public/**'
+      - 'docs/external/**'
       - 'docs-website/**'
   workflow_dispatch:
 

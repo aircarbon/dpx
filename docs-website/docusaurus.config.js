@@ -2,8 +2,8 @@ import {themes as prismThemes} from 'prism-react-renderer';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'ACX RWA Documentation',
-  tagline: 'Future Carbon Tons (FCT) Tokenization',
+  title: 'ACX DPX Documentation',
+  tagline: 'Future Carbon Tons (FCT) Tokenization & Exchange',
   favicon: 'img/favicon.ico',
 
   url: 'https://aircarbon.github.io',
@@ -43,12 +43,24 @@ const config = {
     ],
   ],
 
+  themes: [
+    [
+      require.resolve('@easyops-cn/docusaurus-search-local'),
+      {
+        hashed: true,
+        indexDocs: true,
+        indexBlog: false,
+        docsRouteBasePath: '/docs/external',
+      },
+    ],
+  ],
+
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       image: 'img/docusaurus-social-card.jpg',
       navbar: {
-        title: 'ACX RWA',
+        title: 'ACX DPX',
         logo: {
           alt: 'Logo',
           src: 'img/logo.png',
