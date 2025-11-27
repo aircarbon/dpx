@@ -1,9 +1,10 @@
 # DPX Project - Smart Contracts Repository
 
-This repository contains smart contracts for two main systems:
+This repository contains smart contracts for three main systems:
 
 1. **ACR Governance Token & DAO** - An upgradeable ERC-20 governance token with on-chain voting capabilities
 2. **DPX Platform** - A decentralized platform for tokenizing future carbon credits
+3. **SwapBox** - Atomic, non-custodial ERC20 token swaps powered by AirSwap's SwapERC20 protocol
 
 ## Production Deployments
 
@@ -19,6 +20,9 @@ This repository contains smart contracts for two main systems:
 The token is controlled by a multisig Treasury Safe wallet, which currently holds the entire supply of 1 billion tokens.
 
 ### DPX Project
+Not deployed for now.
+
+### SwapBox
 Not deployed for now.
 
 ## Project Overview
@@ -58,11 +62,27 @@ The DPX (Decentralized Project Exchange) platform enables tokenization of future
 
 **Documentation**: [DPX Platform Documentation](docs/DPX_SC_ARCHITECTURE.md)
 
+### SwapBox (Atomic Token Swaps)
+
+SwapBox enables atomic ERC20 token swaps using off-chain signed orders. Built on **AirSwap's SwapERC20 v5.0.0**, it provides a trustless, peer-to-peer token exchange mechanism.
+
+**Key Features**:
+- Atomic swaps with EIP-712 signed orders
+- Protocol fee collection for platform revenue
+- Gas-optimized swap methods
+- Nonce management for replay protection
+- Non-upgradeable (immutable once deployed)
+
+**Deployment**: SwapBox is deployed as a separate instance to faciliotate atomic swap of ERC-20 tokens and collect protocol fees from token swaps on the platform.
+
+**Documentation**: [SwapBox Integration Guide](docs/team/SWAPBOX_OVERVIEW.md) - Complete deployment and interaction guide
+
 ## Technology Stack
 
 - **Foundry**: Smart contract development framework
 - **OpenZeppelin Contracts**: Battle-tested contract libraries
 - **Solidity**: Smart contract programming language
+- **AirSwap**: Atomic token swap protocol (SwapERC20 v5.0.0)
 - **Safe Global**: Multi-signature wallet infrastructure
 - **Tally**: DAO governance interface
 - **Hedgey Finance**: Vesting schedule management
@@ -120,6 +140,7 @@ forge build
 - **[ACR Governance System](docs/ACR_OVERVIEW.md)** - Complete guide for ACR token, Governor contract, deployment, and DAO setup
 - **[ACR Deployment Workflow](docs/ACR_DEPLOYMENT.md)** - Step-by-step workflow for production token launch with multisig and DAO
 - **[DPX Platform](docs/DPX_SC_ARCHITECTURE.md)** - Architecture, deployment, and testing guide for the carbon credit tokenization platform
+- **[SwapBox Integration](docs/team/SWAPBOX_OVERVIEW.md)** - Deployment and interaction guide for atomic token swaps using AirSwap SwapERC20
 
 ### Contract Reference
 
@@ -132,6 +153,10 @@ forge build
 - `src/FutureCarbonToken.sol` - ERC-20 tokens for future carbon credits
 - `src/RedemptionVault.sol` - USDT redemption management
 
+#### SwapBox Contracts
+- `lib/airswap-protocols/source/swap-erc20/contracts/SwapERC20.sol` - AirSwap atomic swap contract (v5.0.0)
+- `src/interfaces/ISwapERC20.sol` - Extended interface for CLI interactions and testing
+
 ### Deployment Scripts
 
 #### ACR Governance Scripts
@@ -142,3 +167,6 @@ forge build
 #### DPX Platform Scripts
 - `script/DeployFctFactory.s.sol` - Deploy FctFactory
 - `script/UpgradeFctFactory.s.sol` - Upgrade FctFactory
+
+#### SwapBox Scripts
+- `script/DeploySwapERC20.s.sol` - Deploy SwapBox (AirSwap SwapERC20) instance

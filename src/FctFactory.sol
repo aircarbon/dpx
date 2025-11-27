@@ -12,40 +12,28 @@ import {RedemptionVault} from "./RedemptionVault.sol";
  * @dev Central factory contract for deploying and managing project tokens and redemption vaults.
  *
  * This contract serves as the registry and deployment factory for all DPX projects.
- * Project developers propose projects, and the owner (company multisig) approves or denies them.
- * Upon approval, a FutureCarbonToken is deployed. Later, a RedemptionVault can be deployed.
+ * Only the owner (company multisig) can create new projects, which immediately deploys a token.
  *
  * Features:
  * - UUPS Upgradeable: Implementation can be upgraded to add new features
- * - Project Lifecycle Management: Pending → Approved/Denied
- * - Token Deployment: Creates FutureCarbonToken for approved projects
+ * - Token Deployment: Creates FutureCarbonToken for new projects
  * - Vault Deployment: Creates RedemptionVault when project nears completion
  * - Registry: Maintains mappings of projects, tokens, and vaults
- * - Discovery: Query all projects, filter by status, lookup by ID/token
+ * - Discovery: Query all projects, lookup by ID/token
  *
  * Lifecycle:
- * 1. Developer calls proposeProject() with project details
- * 2. Owner reviews and calls approveProject() or denyProject()
- * 3. If approved, FutureCarbonToken is automatically deployed
- * 4. Tokens are traded on exchange
- * 5. When project completes, owner calls deployVault() to create RedemptionVault
- * 6. Owner funds vault and activates redemption
- * 7. Token holders redeem their tokens for proceeds
+ * 1. Owner calls createProject() with project details
+ * 2. FutureCarbonToken is automatically deployed
+ * 3. Tokens are traded on exchange
+ * 4. When project completes, owner calls deployVault() to create RedemptionVault
+ * 5. Owner funds vault and activates redemption
+ * 6. Token holders redeem their tokens for proceeds
  *
  * IMPORTANT: This contract uses UUPS proxy pattern. After deployment via proxy,
  * the owner can upgrade the implementation by calling upgradeToAndCall().
  * Storage layout must be preserved across upgrades (see storage gap).
  */
 contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
-    // ============ Enums ============
-
-    /// @notice Project lifecycle status
-    enum ProjectStatus {
-        Pending,    // Project proposed, awaiting approval
-        Approved,   // Project approved, token deployed
-        Denied      // Project denied by owner
-    }
-
     // ============ Structs ============
 
     /// @notice Project information
@@ -54,13 +42,11 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         string name;                // Token name
         string symbol;              // Token symbol
         uint256 initialSupply;      // Initial token supply
-        address developer;          // Project developer address
-        address tokenAddress;       // Deployed FutureCarbonToken address (0 if not approved)
+        address tokenAddress;       // Deployed FutureCarbonToken address
         address vaultAddress;       // Deployed RedemptionVault address (0 if not deployed)
-        ProjectStatus status;       // Current project status
-        uint256 proposedAt;         // Timestamp of proposal
-        uint256 processedAt;        // Timestamp of approval/denial
-        string metadata;            // Optional metadata (e.g., off-chain identifier, IPFS hash)
+        uint256 createdAt;          // Timestamp of project creation
+        uint256 vintageYear;        // Vintage year of the carbon credits
+        string projectRegistryCode; // Project registry code (e.g., Verra ID)
     }
 
     // ============ State Variables ============
@@ -76,25 +62,16 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
     // ============ Events ============
 
-    /// @notice Emitted when a new project is proposed
-    event ProjectProposed(
+    /// @notice Emitted when a new project is created and token is deployed
+    event ProjectCreated(
         uint256 indexed projectId,
-        address indexed developer,
+        address indexed tokenAddress,
         string name,
         string symbol,
         uint256 initialSupply,
-        string metadata
+        uint256 vintageYear,
+        string projectRegistryCode
     );
-
-    /// @notice Emitted when a project is approved and token is deployed
-    event ProjectApproved(
-        uint256 indexed projectId,
-        address indexed tokenAddress,
-        address indexed developer
-    );
-
-    /// @notice Emitted when a project is denied
-    event ProjectDenied(uint256 indexed projectId, address indexed developer);
 
     /// @notice Emitted when a redemption vault is deployed
     event VaultDeployed(
@@ -132,35 +109,63 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
+
+        // Start project IDs at 1 to use 0 as sentinel value for "not found"
+        projectIdCounter = 1;
     }
 
-    // ============ Project Proposal Functions ============
+    // ============ Owner Functions ============
 
     /**
-     * @dev Propose a new project
-     * Called by project developers to submit a project for approval
+     * @dev Create a new project and deploy its token
+     * Only callable by owner (company multisig)
      *
      * @param name Token name (e.g., "Future Carbon Credit - Project Alpha")
      * @param symbol Token symbol (e.g., "FCC-ALPHA")
      * @param initialSupply Initial token supply (with 18 decimals)
-     * @param metadata Optional metadata (e.g., off-chain identifier, IPFS hash, project description)
+     * @param vintageYear Vintage year of the carbon credits
+     * @param projectRegistryCode Project registry code (e.g., Verra ID)
+     * @param metadata Array of custom metadata key-value pairs
      * @return projectId The assigned project ID
+     * @return tokenAddress The address of the deployed FutureCarbonToken
      *
-     * NOTE: Project ID is auto-generated. The project will be in Pending status until owner approves/denies
+     * This function:
+     * 1. Validates input parameters
+     * 2. Deploys a new FutureCarbonToken with all project details
+     * 3. Creates a project record in the registry
+     * 4. Registers the token for reverse lookup
      */
-    function proposeProject(
+    function createProject(
         string memory name,
         string memory symbol,
         uint256 initialSupply,
-        string memory metadata
-    ) external returns (uint256 projectId) {
+        uint256 vintageYear,
+        string memory projectRegistryCode,
+        FutureCarbonToken.MetadataEntry[] memory metadata
+    ) external onlyOwner returns (uint256 projectId, address tokenAddress) {
         require(bytes(name).length > 0, "Name cannot be empty");
         require(bytes(symbol).length > 0, "Symbol cannot be empty");
         require(initialSupply > 0, "Initial supply must be greater than 0");
+        require(vintageYear > 0, "Vintage year must be greater than 0");
+        require(bytes(projectRegistryCode).length > 0, "Project registry code cannot be empty");
 
         // Assign new project ID and increment counter
         projectId = projectIdCounter;
         projectIdCounter++;
+
+        // Deploy FutureCarbonToken
+        // Owner of the token is this factory's owner (company multisig)
+        FutureCarbonToken token = new FutureCarbonToken(
+            name,
+            symbol,
+            initialSupply,
+            owner(),
+            vintageYear,
+            projectRegistryCode,
+            metadata
+        );
+
+        tokenAddress = address(token);
 
         // Create project struct
         Project memory newProject = Project({
@@ -168,99 +173,34 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
             name: name,
             symbol: symbol,
             initialSupply: initialSupply,
-            developer: msg.sender,
-            tokenAddress: address(0),
+            tokenAddress: tokenAddress,
             vaultAddress: address(0),
-            status: ProjectStatus.Pending,
-            proposedAt: block.timestamp,
-            processedAt: 0,
-            metadata: metadata
+            createdAt: block.timestamp,
+            vintageYear: vintageYear,
+            projectRegistryCode: projectRegistryCode
         });
 
         // Store project
         projects[projectId] = newProject;
 
-        emit ProjectProposed(projectId, msg.sender, name, symbol, initialSupply, metadata);
-
-        return projectId;
-    }
-
-    // ============ Owner Functions ============
-
-    /**
-     * @dev Approve a project and deploy its token
-     * Only callable by owner (company multisig)
-     *
-     * @param projectId The project ID to approve
-     * @return tokenAddress The address of the deployed FutureCarbonToken
-     *
-     * This function:
-     * 1. Validates the project is in Pending status
-     * 2. Deploys a new FutureCarbonToken
-     * 3. Updates project status to Approved
-     * 4. Registers the token in the registry
-     */
-    function approveProject(uint256 projectId)
-        external
-        onlyOwner
-        projectMustExist(projectId)
-        returns (address tokenAddress)
-    {
-        Project storage project = projects[projectId];
-        require(project.status == ProjectStatus.Pending, "Project not in Pending status");
-
-        // Deploy FutureCarbonToken
-        // Owner of the token is this factory's owner (company multisig)
-        FutureCarbonToken token = new FutureCarbonToken(
-            project.name,
-            project.symbol,
-            project.initialSupply,
-            owner()
-        );
-
-        tokenAddress = address(token);
-
-        // Update project
-        project.tokenAddress = tokenAddress;
-        project.status = ProjectStatus.Approved;
-        project.processedAt = block.timestamp;
-
         // Register token in reverse lookup
         tokenToProjectId[tokenAddress] = projectId;
 
-        emit ProjectApproved(projectId, tokenAddress, project.developer);
+        emit ProjectCreated(projectId, tokenAddress, name, symbol, initialSupply, vintageYear, projectRegistryCode);
+
+        return (projectId, tokenAddress);
     }
 
     /**
-     * @dev Deny a project proposal
-     * Only callable by owner (company multisig)
-     *
-     * @param projectId The project ID to deny
-     */
-    function denyProject(uint256 projectId)
-        external
-        onlyOwner
-        projectMustExist(projectId)
-    {
-        Project storage project = projects[projectId];
-        require(project.status == ProjectStatus.Pending, "Project not in Pending status");
-
-        project.status = ProjectStatus.Denied;
-        project.processedAt = block.timestamp;
-
-        emit ProjectDenied(projectId, project.developer);
-    }
-
-    /**
-     * @dev Deploy a redemption vault for an approved project
+     * @dev Deploy a redemption vault for a project
      * Only callable by owner (company multisig)
      *
      * @param projectId The project ID to deploy vault for
      * @param stablecoin The stablecoin address (e.g., USDT) for redemptions
      * @return vaultAddress The address of the deployed RedemptionVault
      *
-     * NOTE: This is called separately from approval, typically when the project
-     * nears completion and carbon credits are about to be sold.
+     * NOTE: This is called when the project nears completion and carbon
+     * credits are about to be sold. Each project can only have one vault.
      */
     function deployVault(uint256 projectId, address stablecoin)
         external
@@ -269,7 +209,6 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         returns (address vaultAddress)
     {
         Project storage project = projects[projectId];
-        require(project.status == ProjectStatus.Approved, "Project not approved");
         require(project.tokenAddress != address(0), "Token not deployed");
         require(project.vaultAddress == address(0), "Vault already deployed");
         require(stablecoin != address(0), "Stablecoin cannot be zero address");
@@ -311,48 +250,19 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
      * @return allProjects Array of all projects
      *
      * NOTE: This can be gas-intensive if there are many projects.
-     * Consider using pagination in production.
+     * Consider using pagination in production or querying off-chain via events.
      */
     function getAllProjects() external view returns (Project[] memory allProjects) {
-        uint256 count = projectIdCounter;
+        // Calculate actual count (projectIdCounter starts at 1, so count is projectIdCounter - 1)
+        uint256 count = projectIdCounter > 0 ? projectIdCounter - 1 : 0;
         allProjects = new Project[](count);
 
+        // Start from index 1 since project IDs start at 1 (0 is unused)
         for (uint256 i = 0; i < count; i++) {
-            allProjects[i] = projects[i];
+            allProjects[i] = projects[i + 1];
         }
 
         return allProjects;
-    }
-
-    /**
-     * @dev Get projects filtered by status
-     * @param status The status to filter by
-     * @return filteredProjects Array of projects with the specified status
-     */
-    function getProjectsByStatus(ProjectStatus status)
-        external
-        view
-        returns (Project[] memory filteredProjects)
-    {
-        // Count matching projects
-        uint256 count = 0;
-        for (uint256 i = 0; i < projectIdCounter; i++) {
-            if (projects[i].status == status) {
-                count++;
-            }
-        }
-
-        // Populate result array
-        filteredProjects = new Project[](count);
-        uint256 index = 0;
-        for (uint256 i = 0; i < projectIdCounter; i++) {
-            if (projects[i].status == status) {
-                filteredProjects[index] = projects[i];
-                index++;
-            }
-        }
-
-        return filteredProjects;
     }
 
     /**
@@ -408,7 +318,8 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
      * @return count Total number of projects
      */
     function getProjectCount() external view returns (uint256 count) {
-        return projectIdCounter;
+        // Since projectIdCounter starts at 1, actual count is projectIdCounter - 1
+        return projectIdCounter > 0 ? projectIdCounter - 1 : 0;
     }
 
     /**
@@ -417,7 +328,8 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
      * @return exists True if project exists
      */
     function projectIdExists(uint256 projectId) external view returns (bool exists) {
-        return projectId < projectIdCounter;
+        // Project IDs start at 1, so 0 is always invalid
+        return projectId > 0 && projectId < projectIdCounter;
     }
 
     /**
