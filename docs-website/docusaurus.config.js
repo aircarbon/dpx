@@ -3,7 +3,7 @@ import {themes as prismThemes} from 'prism-react-renderer';
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'ACX RWA Documentation',
-  tagline: 'Smart Contracts for ACR Governance & Carbon Credit Tokenization',
+  tagline: 'Future Carbon Tons (FCT) Tokenization',
   favicon: 'img/favicon.ico',
 
   url: 'https://aircarbon.github.io',
@@ -31,7 +31,7 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          path: '../docs/public',
+          path: '../docs/external',
           sidebarPath: './sidebars.js',
           editUrl: 'https://github.com/aircarbon/dpx/tree/main/',
         },

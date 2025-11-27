@@ -18,7 +18,7 @@ function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/intro">
+            to="/docs/introduction">
             Get Started
           </Link>
         </div>
@@ -39,17 +39,17 @@ export default function Home() {
           <div className="container">
             <div className="row">
               <div className="col col--6">
-                <h3>ACR Governance Token</h3>
-                <p>
-                  Upgradeable ERC-20 governance token with on-chain voting capabilities.
-                  Deployed on Avalanche C-chain.
-                </p>
-              </div>
-              <div className="col col--6">
                 <h3>DPX Platform</h3>
                 <p>
                   Decentralized platform for tokenizing future carbon credits.
                   Enable project developers to raise capital for carbon credit projects.
+                </p>
+              </div>
+              <div className="col col--6">
+                <h3>ACR Governance Token</h3>
+                <p>
+                  Upgradeable ERC-20 governance token with on-chain voting capabilities.
+                  Deployed on Avalanche C-chain.
                 </p>
               </div>
             </div>
