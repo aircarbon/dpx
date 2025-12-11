@@ -119,6 +119,7 @@ Note: While IPFS remains a viable option for decentralized metadata storage, Ava
 - **Burnable:** Required for the redemption process—tokens are burned when exchanged for proceeds
 - **Pausable:** Emergency capability to halt transfers if issues arise
 - **Mintable:** Owner can mint tokens during initial issuance (typically done once at project creation)
+- **Flexible Token Distribution:** Initial supply is minted to a specified receiver address, allowing separation between administrative ownership and token holdings
 
 **One Token Per Project:**
 Each project has its own distinct FCT token contract. This design ensures:

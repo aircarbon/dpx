@@ -25,7 +25,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  *
  * Lifecycle:
  * 1. Deployed by FctFactory upon project creation
- * 2. Initial supply minted to owner (company address)
+ * 2. Initial supply minted to specified receiver address
  * 3. Tokens traded on exchange
  * 4. When project completes, tokens redeemed via RedemptionVault (burned)
  *
@@ -57,11 +57,13 @@ contract FutureCarbonToken is ERC20, ERC20Permit, ERC20Burnable, ERC20Pausable, 
      * @param symbol The symbol of the token (e.g., "FCC-ALPHA")
      * @param initialSupply The initial supply of tokens to mint (with 18 decimals)
      * @param owner The owner address (typically company multisig wallet)
+     * @param receiver The address to receive the initial token supply
      * @param _vintageYear Vintage year of the carbon credits
      * @param _projectRegistryCode Project registry code (e.g., Verra ID)
      * @param _metadata Array of custom metadata key-value pairs
      *
-     * NOTE: The initial supply is minted to the owner address during deployment.
+     * NOTE: The initial supply is minted to the receiver address during deployment.
+     * The owner has administrative control (mint, pause, etc.) but may not hold tokens.
      * All metadata fields are immutable after deployment.
      */
     constructor(
@@ -69,11 +71,13 @@ contract FutureCarbonToken is ERC20, ERC20Permit, ERC20Burnable, ERC20Pausable, 
         string memory symbol,
         uint256 initialSupply,
         address owner,
+        address receiver,
         uint256 _vintageYear,
         string memory _projectRegistryCode,
         MetadataEntry[] memory _metadata
     ) ERC20(name, symbol) ERC20Permit(name) Ownable(owner) {
         require(owner != address(0), "Owner cannot be zero address");
+        require(receiver != address(0), "Receiver cannot be zero address");
         require(initialSupply > 0, "Initial supply must be greater than 0");
         require(_vintageYear > 0, "Vintage year must be greater than 0");
         require(bytes(_projectRegistryCode).length > 0, "Project registry code cannot be empty");
@@ -87,7 +91,7 @@ contract FutureCarbonToken is ERC20, ERC20Permit, ERC20Burnable, ERC20Pausable, 
             metadata.push(_metadata[i]);
         }
 
-        _mint(owner, initialSupply);
+        _mint(receiver, initialSupply);
     }
 
     /**

@@ -125,7 +125,7 @@ contract FctFactoryTest is Test {
         emit ProjectCreated(1, address(0), PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE);
 
         (uint256 projectId, address tokenAddress) = factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
 
         assertEq(projectId, 1);
@@ -162,11 +162,36 @@ contract FctFactoryTest is Test {
         assertEq(factory.getTokenForProject(projectId), tokenAddress);
     }
 
+    function test_CreateProjectWithDifferentReceiver() public {
+        // Create project where tokens are minted to user1, not owner
+        (uint256 projectId, address tokenAddress) = factory.createProject(
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, user1, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+        );
+
+        FutureCarbonToken token = FutureCarbonToken(tokenAddress);
+
+        // Verify tokens went to user1, not owner
+        assertEq(token.balanceOf(user1), INITIAL_SUPPLY);
+        assertEq(token.balanceOf(owner), 0);
+
+        // But owner still has administrative control
+        assertEq(token.owner(), owner);
+
+        // Owner can still mint more tokens
+        token.mint(user2, 1000 * 10 ** 18);
+        assertEq(token.balanceOf(user2), 1000 * 10 ** 18);
+    }
+
+    function test_RevertCreateProjectZeroReceiver() public {
+        vm.expectRevert("Receiver cannot be zero address");
+        factory.createProject(PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, address(0), VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata());
+    }
+
     function test_CreateProjectWithMetadata() public {
         FutureCarbonToken.MetadataEntry[] memory metadata = multipleMetadata();
 
         (uint256 projectId, address tokenAddress) = factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, metadata
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, metadata
         );
 
         FutureCarbonToken token = FutureCarbonToken(tokenAddress);
@@ -182,17 +207,17 @@ contract FctFactoryTest is Test {
     function test_CreateMultipleProjects() public {
         // First project
         (uint256 projectId1, address tokenAddress1) = factory.createProject(
-            "Project 1", "PRJ1", 1000 * 10 ** 18, 2024, "VCS-1000", emptyMetadata()
+            "Project 1", "PRJ1", 1000 * 10 ** 18, owner, 2024, "VCS-1000", emptyMetadata()
         );
 
         // Second project
         (uint256 projectId2, address tokenAddress2) = factory.createProject(
-            "Project 2", "PRJ2", 2000 * 10 ** 18, 2025, "GS-2000", singleMetadata("type", "forestry")
+            "Project 2", "PRJ2", 2000 * 10 ** 18, owner, 2025, "GS-2000", singleMetadata("type", "forestry")
         );
 
         // Third project
         (uint256 projectId3, address tokenAddress3) = factory.createProject(
-            "Project 3", "PRJ3", 3000 * 10 ** 18, 2026, "ACR-3000", emptyMetadata()
+            "Project 3", "PRJ3", 3000 * 10 ** 18, owner, 2026, "ACR-3000", emptyMetadata()
         );
 
         assertEq(projectId1, 1);
@@ -212,33 +237,33 @@ contract FctFactoryTest is Test {
         vm.prank(user1);
         vm.expectRevert();
         factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
     }
 
     function test_RevertCreateProjectEmptyName() public {
         vm.expectRevert("Name cannot be empty");
-        factory.createProject("", PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata());
+        factory.createProject("", PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata());
     }
 
     function test_RevertCreateProjectEmptySymbol() public {
         vm.expectRevert("Symbol cannot be empty");
-        factory.createProject(PROJECT_NAME, "", INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata());
+        factory.createProject(PROJECT_NAME, "", INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata());
     }
 
     function test_RevertCreateProjectZeroSupply() public {
         vm.expectRevert("Initial supply must be greater than 0");
-        factory.createProject(PROJECT_NAME, PROJECT_SYMBOL, 0, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata());
+        factory.createProject(PROJECT_NAME, PROJECT_SYMBOL, 0, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata());
     }
 
     function test_RevertCreateProjectZeroVintageYear() public {
         vm.expectRevert("Vintage year must be greater than 0");
-        factory.createProject(PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, 0, REGISTRY_CODE, emptyMetadata());
+        factory.createProject(PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, 0, REGISTRY_CODE, emptyMetadata());
     }
 
     function test_RevertCreateProjectEmptyRegistryCode() public {
         vm.expectRevert("Project registry code cannot be empty");
-        factory.createProject(PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, "", emptyMetadata());
+        factory.createProject(PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, "", emptyMetadata());
     }
 
     // ========== deployVault Tests ==========
@@ -246,7 +271,7 @@ contract FctFactoryTest is Test {
     function test_DeployVault() public {
         // Create project
         (uint256 projectId, address tokenAddress) = factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
 
         // Deploy vault
@@ -269,7 +294,7 @@ contract FctFactoryTest is Test {
 
     function test_RevertDeployVaultNotOwner() public {
         (uint256 projectId,) = factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
 
         vm.prank(user1);
@@ -284,7 +309,7 @@ contract FctFactoryTest is Test {
 
     function test_RevertDeployVaultAlreadyDeployed() public {
         (uint256 projectId,) = factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
 
         factory.deployVault(projectId, mockStablecoin);
@@ -295,7 +320,7 @@ contract FctFactoryTest is Test {
 
     function test_RevertDeployVaultZeroAddressStablecoin() public {
         (uint256 projectId,) = factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
 
         vm.expectRevert("Stablecoin cannot be zero address");
@@ -306,7 +331,7 @@ contract FctFactoryTest is Test {
 
     function test_GetProject() public {
         (uint256 projectId,) = factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
 
         FctFactory.Project memory project = factory.getProject(projectId);
@@ -326,7 +351,7 @@ contract FctFactoryTest is Test {
     }
 
     function test_GetAllProjectsSingle() public {
-        factory.createProject(PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata());
+        factory.createProject(PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata());
 
         FctFactory.Project[] memory projects = factory.getAllProjects();
         assertEq(projects.length, 1);
@@ -334,9 +359,9 @@ contract FctFactoryTest is Test {
     }
 
     function test_GetAllProjectsMultiple() public {
-        factory.createProject("Project 1", "PRJ1", 1000 * 10 ** 18, 2024, "VCS-1", emptyMetadata());
-        factory.createProject("Project 2", "PRJ2", 2000 * 10 ** 18, 2025, "VCS-2", emptyMetadata());
-        factory.createProject("Project 3", "PRJ3", 3000 * 10 ** 18, 2026, "VCS-3", emptyMetadata());
+        factory.createProject("Project 1", "PRJ1", 1000 * 10 ** 18, owner, 2024, "VCS-1", emptyMetadata());
+        factory.createProject("Project 2", "PRJ2", 2000 * 10 ** 18, owner, 2025, "VCS-2", emptyMetadata());
+        factory.createProject("Project 3", "PRJ3", 3000 * 10 ** 18, owner, 2026, "VCS-3", emptyMetadata());
 
         FctFactory.Project[] memory projects = factory.getAllProjects();
         assertEq(projects.length, 3);
@@ -347,7 +372,7 @@ contract FctFactoryTest is Test {
 
     function test_GetVaultForToken() public {
         (uint256 projectId, address tokenAddress) = factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
 
         // Before vault deployment
@@ -370,7 +395,7 @@ contract FctFactoryTest is Test {
 
     function test_GetTokenForProject() public {
         (uint256 projectId, address tokenAddress) = factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
 
         address retrievedToken = factory.getTokenForProject(projectId);
@@ -385,7 +410,7 @@ contract FctFactoryTest is Test {
 
     function test_GetProjectIdForToken() public {
         (uint256 projectId, address tokenAddress) = factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
 
         assertEq(factory.getProjectIdForToken(tokenAddress), projectId);
@@ -404,10 +429,10 @@ contract FctFactoryTest is Test {
     function test_GetProjectCount() public {
         assertEq(factory.getProjectCount(), 0);
 
-        factory.createProject("P1", "P1", 1000 * 10 ** 18, 2024, "V1", emptyMetadata());
+        factory.createProject("P1", "P1", 1000 * 10 ** 18, owner, 2024, "V1", emptyMetadata());
         assertEq(factory.getProjectCount(), 1);
 
-        factory.createProject("P2", "P2", 2000 * 10 ** 18, 2025, "V2", emptyMetadata());
+        factory.createProject("P2", "P2", 2000 * 10 ** 18, owner, 2025, "V2", emptyMetadata());
         assertEq(factory.getProjectCount(), 2);
     }
 
@@ -415,7 +440,7 @@ contract FctFactoryTest is Test {
         assertFalse(factory.projectIdExists(0));
         assertFalse(factory.projectIdExists(1));
 
-        factory.createProject(PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata());
+        factory.createProject(PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata());
 
         assertFalse(factory.projectIdExists(0)); // 0 is never used
         assertTrue(factory.projectIdExists(1));
@@ -425,10 +450,10 @@ contract FctFactoryTest is Test {
     function test_GetNextProjectId() public {
         assertEq(factory.getNextProjectId(), 1);
 
-        factory.createProject("P1", "P1", 1000 * 10 ** 18, 2024, "V1", emptyMetadata());
+        factory.createProject("P1", "P1", 1000 * 10 ** 18, owner, 2024, "V1", emptyMetadata());
         assertEq(factory.getNextProjectId(), 2);
 
-        factory.createProject("P2", "P2", 2000 * 10 ** 18, 2025, "V2", emptyMetadata());
+        factory.createProject("P2", "P2", 2000 * 10 ** 18, owner, 2025, "V2", emptyMetadata());
         assertEq(factory.getNextProjectId(), 3);
     }
 
@@ -437,7 +462,7 @@ contract FctFactoryTest is Test {
     function test_UpgradeToNewImplementation() public {
         // Create a project first
         (uint256 projectId,) = factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
 
         // Record state before upgrade
@@ -462,7 +487,7 @@ contract FctFactoryTest is Test {
         assertEq(projectAfter.vintageYear, projectBefore.vintageYear);
 
         // Verify factory still works
-        (uint256 newProjectId,) = factory.createProject("New Project", "NEW", 5000 * 10 ** 18, 2027, "NEW-1", emptyMetadata());
+        (uint256 newProjectId,) = factory.createProject("New Project", "NEW", 5000 * 10 ** 18, owner, 2027, "NEW-1", emptyMetadata());
         assertEq(newProjectId, 2);
     }
 
@@ -479,7 +504,7 @@ contract FctFactoryTest is Test {
     function test_CompleteProjectLifecycle() public {
         // 1. Owner creates project
         (uint256 projectId, address tokenAddress) = factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, multipleMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, multipleMetadata()
         );
 
         FctFactory.Project memory project = factory.getProject(projectId);
@@ -515,11 +540,11 @@ contract FctFactoryTest is Test {
     function test_MultipleProjectsLifecycle() public {
         // Create three projects
         (uint256 project1, address token1) =
-            factory.createProject("Project Alpha", "PA", 1_000_000 * 10 ** 18, 2024, "VCS-100", emptyMetadata());
+            factory.createProject("Project Alpha", "PA", 1_000_000 * 10 ** 18, owner, 2024, "VCS-100", emptyMetadata());
         (uint256 project2, address token2) =
-            factory.createProject("Project Beta", "PB", 2_000_000 * 10 ** 18, 2025, "GS-200", emptyMetadata());
+            factory.createProject("Project Beta", "PB", 2_000_000 * 10 ** 18, owner, 2025, "GS-200", emptyMetadata());
         (uint256 project3, address token3) =
-            factory.createProject("Project Gamma", "PG", 3_000_000 * 10 ** 18, 2026, "ACR-300", emptyMetadata());
+            factory.createProject("Project Gamma", "PG", 3_000_000 * 10 ** 18, owner, 2026, "ACR-300", emptyMetadata());
 
         // Deploy vaults for all projects
         factory.deployVault(project1, mockStablecoin);
@@ -542,9 +567,9 @@ contract FctFactoryTest is Test {
     function test_ProjectWithSameNameAndSymbol() public {
         // Two projects can have same name/symbol (different tokens)
         (uint256 project1, address token1) =
-            factory.createProject("Same Name", "SAME", 1000 * 10 ** 18, 2024, "VCS-1", emptyMetadata());
+            factory.createProject("Same Name", "SAME", 1000 * 10 ** 18, owner, 2024, "VCS-1", emptyMetadata());
         (uint256 project2, address token2) =
-            factory.createProject("Same Name", "SAME", 2000 * 10 ** 18, 2025, "VCS-2", emptyMetadata());
+            factory.createProject("Same Name", "SAME", 2000 * 10 ** 18, owner, 2025, "VCS-2", emptyMetadata());
 
         assertTrue(token1 != token2);
         assertEq(FutureCarbonToken(token1).name(), "Same Name");
@@ -559,13 +584,13 @@ contract FctFactoryTest is Test {
         // Old owner cannot create
         vm.expectRevert();
         factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, owner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
 
         // New owner can create
         vm.prank(newOwner);
         (uint256 projectId,) = factory.createProject(
-            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
+            PROJECT_NAME, PROJECT_SYMBOL, INITIAL_SUPPLY, newOwner, VINTAGE_YEAR, REGISTRY_CODE, emptyMetadata()
         );
 
         FctFactory.Project memory project = factory.getProject(projectId);
@@ -579,6 +604,7 @@ contract FctFactoryTest is Test {
                 string(abi.encodePacked("Project ", vm.toString(i))),
                 string(abi.encodePacked("P", vm.toString(i))),
                 (i + 1) * 1000 * 10 ** 18,
+                owner,
                 2024 + i,
                 string(abi.encodePacked("VCS-", vm.toString(i))),
                 emptyMetadata()

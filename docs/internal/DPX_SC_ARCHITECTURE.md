@@ -65,6 +65,7 @@ The DPX (Decentralized Project Exchange) system enables tokenization of future c
 - Standard ERC-20 token with transfer, approve, and allowance
 - Gasless approvals via EIP-2612 permit (approve by signature, no gas cost)
 - Mintable by owner (typically only at deployment)
+- Initial supply minted to a specified receiver address (can differ from owner)
 - Burnable (required for redemption process)
 - Pausable (emergency stop for transfers)
 - 18 decimals (standard ERC-20 precision)
@@ -288,12 +289,14 @@ cast call $FACTORY_ADDRESS \
 
 ```bash
 # Create project with empty metadata
+# Parameters: name, symbol, initialSupply, receiver, vintageYear, registryCode, metadata
 # With mnemonic:
 cast send $FACTORY_ADDRESS \
-  "createProject(string,string,uint256,uint256,string,(string,string)[])" \
+  "createProject(string,string,uint256,address,uint256,string,(string,string)[])" \
   "Future Carbon Credit - Alpha" \
   "FCC-ALPHA" \
   $(cast --to-wei 1000000) \
+  0xReceiverAddress \
   2025 \
   "VCS-1234-2025" \
   "[]" \
@@ -303,10 +306,11 @@ cast send $FACTORY_ADDRESS \
 
 # OR with PRIVATE_KEY:
 cast send $FACTORY_ADDRESS \
-  "createProject(string,string,uint256,uint256,string,(string,string)[])" \
+  "createProject(string,string,uint256,address,uint256,string,(string,string)[])" \
   "Future Carbon Credit - Alpha" \
   "FCC-ALPHA" \
   $(cast --to-wei 1000000) \
+  0xReceiverAddress \
   2025 \
   "VCS-1234-2025" \
   "[]" \
@@ -314,6 +318,7 @@ cast send $FACTORY_ADDRESS \
   --private-key $PRIVATE_KEY
 
 # Note: This automatically deploys the FutureCarbonToken with the provided metadata
+# The initial supply is minted to the specified receiver address
 # Returns: (projectId, tokenAddress)
 ```
 

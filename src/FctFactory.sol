@@ -123,6 +123,7 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
      * @param name Token name (e.g., "Future Carbon Credit - Project Alpha")
      * @param symbol Token symbol (e.g., "FCC-ALPHA")
      * @param initialSupply Initial token supply (with 18 decimals)
+     * @param receiver Address to receive the initial token supply
      * @param vintageYear Vintage year of the carbon credits
      * @param projectRegistryCode Project registry code (e.g., Verra ID)
      * @param metadata Array of custom metadata key-value pairs
@@ -132,13 +133,15 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
      * This function:
      * 1. Validates input parameters
      * 2. Deploys a new FutureCarbonToken with all project details
-     * 3. Creates a project record in the registry
-     * 4. Registers the token for reverse lookup
+     * 3. Mints initial supply to the specified receiver address
+     * 4. Creates a project record in the registry
+     * 5. Registers the token for reverse lookup
      */
     function createProject(
         string memory name,
         string memory symbol,
         uint256 initialSupply,
+        address receiver,
         uint256 vintageYear,
         string memory projectRegistryCode,
         FutureCarbonToken.MetadataEntry[] memory metadata
@@ -146,6 +149,7 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
         require(bytes(name).length > 0, "Name cannot be empty");
         require(bytes(symbol).length > 0, "Symbol cannot be empty");
         require(initialSupply > 0, "Initial supply must be greater than 0");
+        require(receiver != address(0), "Receiver cannot be zero address");
         require(vintageYear > 0, "Vintage year must be greater than 0");
         require(bytes(projectRegistryCode).length > 0, "Project registry code cannot be empty");
 
@@ -155,11 +159,13 @@ contract FctFactory is Initializable, UUPSUpgradeable, OwnableUpgradeable {
 
         // Deploy FutureCarbonToken
         // Owner of the token is this factory's owner (company multisig)
+        // Initial supply is minted to the specified receiver address
         FutureCarbonToken token = new FutureCarbonToken(
             name,
             symbol,
             initialSupply,
             owner(),
+            receiver,
             vintageYear,
             projectRegistryCode,
             metadata
